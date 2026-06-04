@@ -1,0 +1,879 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l37
+txn OnCompletion
+int UpdateApplication
+==
+bnz main_l36
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l35
+txn OnCompletion
+int CloseOut
+==
+bnz main_l34
+txn OnCompletion
+int OptIn
+==
+bnz main_l33
+txn OnCompletion
+int NoOp
+==
+bnz main_l7
+err
+main_l7:
+txna ApplicationArgs 0
+byte "setup"
+==
+bnz main_l32
+txna ApplicationArgs 0
+byte "contribute"
+==
+bnz main_l29
+txna ApplicationArgs 0
+byte "finalize"
+==
+bnz main_l26
+txna ApplicationArgs 0
+byte "creator_claim"
+==
+bnz main_l25
+txna ApplicationArgs 0
+byte "refund"
+==
+bnz main_l24
+txna ApplicationArgs 0
+byte "creator_reclaim_asa"
+==
+bnz main_l23
+txna ApplicationArgs 0
+byte "admin_sweep_asa"
+==
+bnz main_l22
+txna ApplicationArgs 0
+byte "admin_claim"
+==
+bnz main_l18
+txna ApplicationArgs 0
+byte "admin_cancel"
+==
+bnz main_l17
+err
+main_l17:
+global GroupSize
+int 1
+==
+assert
+txn Sender
+byte "admin"
+app_global_get
+==
+assert
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+assert
+byte "funded_round"
+app_global_get
+int 0
+==
+assert
+byte "cancelled"
+int 1
+app_global_put
+int 1
+return
+main_l18:
+global GroupSize
+int 1
+==
+assert
+txn Sender
+byte "admin"
+app_global_get
+==
+assert
+byte "admin_claimed"
+app_global_get
+int 0
+==
+assert
+byte "funded_round"
+app_global_get
+int 0
+>
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+&&
+byte "funded_round"
+app_global_get
+int 0
+>
+global Round
+byte "funded_round"
+app_global_get
+int 10
++
+>
+&&
+&&
+byte "asa_id"
+app_global_get
+int 0
+==
+&&
+byte "funded_round"
+app_global_get
+int 0
+==
+byte "cancelled"
+app_global_get
+int 1
+==
+global Round
+byte "deadline"
+app_global_get
+>
+||
+&&
+global Round
+byte "deadline"
+app_global_get
+int 10
++
+>
+&&
+byte "asa_id"
+app_global_get
+int 0
+==
+&&
+||
+assert
+byte "funded_round"
+app_global_get
+int 0
+>
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+&&
+byte "funded_round"
+app_global_get
+int 0
+>
+global Round
+byte "funded_round"
+app_global_get
+int 10
++
+>
+&&
+&&
+byte "asa_id"
+app_global_get
+int 0
+==
+&&
+bnz main_l21
+itxn_begin
+int pay
+itxn_field TypeEnum
+byte "creator"
+app_global_get
+itxn_field Receiver
+int 0
+itxn_field Amount
+byte "admin"
+app_global_get
+itxn_field CloseRemainderTo
+int 0
+itxn_field Fee
+itxn_submit
+main_l20:
+byte "admin_claimed"
+int 1
+app_global_put
+int 1
+return
+main_l21:
+itxn_begin
+int pay
+itxn_field TypeEnum
+byte "admin"
+app_global_get
+itxn_field Receiver
+int 0
+itxn_field Amount
+byte "admin"
+app_global_get
+itxn_field CloseRemainderTo
+int 0
+itxn_field Fee
+itxn_submit
+b main_l20
+main_l22:
+global GroupSize
+int 1
+==
+assert
+txn Sender
+byte "admin"
+app_global_get
+==
+assert
+byte "asa_id"
+app_global_get
+int 0
+!=
+byte "funded_round"
+app_global_get
+int 0
+>
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+&&
+byte "funded_round"
+app_global_get
+int 0
+>
+global Round
+byte "funded_round"
+app_global_get
+int 10
++
+>
+&&
+&&
+byte "funded_round"
+app_global_get
+int 0
+==
+byte "cancelled"
+app_global_get
+int 1
+==
+global Round
+byte "deadline"
+app_global_get
+>
+||
+&&
+global Round
+byte "deadline"
+app_global_get
+int 10
++
+>
+&&
+||
+&&
+assert
+itxn_begin
+int axfer
+itxn_field TypeEnum
+byte "asa_id"
+app_global_get
+itxn_field XferAsset
+byte "admin"
+app_global_get
+itxn_field AssetReceiver
+int 0
+itxn_field AssetAmount
+byte "admin"
+app_global_get
+itxn_field AssetCloseTo
+int 0
+itxn_field Fee
+itxn_submit
+byte "asa_id"
+int 0
+app_global_put
+int 1
+return
+main_l23:
+global GroupSize
+int 1
+==
+assert
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+byte "funded_round"
+app_global_get
+int 0
+==
+byte "cancelled"
+app_global_get
+int 1
+==
+global Round
+byte "deadline"
+app_global_get
+>
+||
+&&
+assert
+byte "asa_id"
+app_global_get
+int 0
+!=
+assert
+itxn_begin
+int axfer
+itxn_field TypeEnum
+byte "asa_id"
+app_global_get
+itxn_field XferAsset
+byte "creator"
+app_global_get
+itxn_field AssetReceiver
+int 0
+itxn_field AssetAmount
+byte "creator"
+app_global_get
+itxn_field AssetCloseTo
+int 0
+itxn_field Fee
+itxn_submit
+byte "asa_id"
+int 0
+app_global_put
+int 1
+return
+main_l24:
+global GroupSize
+int 1
+==
+assert
+byte "funded_round"
+app_global_get
+int 0
+==
+byte "cancelled"
+app_global_get
+int 1
+==
+global Round
+byte "deadline"
+app_global_get
+>
+||
+&&
+assert
+txn Sender
+byte "contrib"
+app_local_get
+store 1
+load 1
+int 0
+>
+assert
+itxn_begin
+int pay
+itxn_field TypeEnum
+txn Sender
+itxn_field Receiver
+load 1
+itxn_field Amount
+int 0
+itxn_field Fee
+itxn_submit
+txn Sender
+byte "contrib"
+int 0
+app_local_put
+int 1
+return
+main_l25:
+global GroupSize
+int 1
+==
+assert
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+byte "funded_round"
+app_global_get
+int 0
+>
+assert
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+assert
+byte "creator_claimed"
+app_global_get
+int 0
+==
+assert
+byte "goal"
+app_global_get
+int 4
+*
+int 100
+/
+store 3
+byte "goal"
+app_global_get
+load 3
+-
+store 4
+load 4
+int 0
+>
+assert
+itxn_begin
+int pay
+itxn_field TypeEnum
+byte "creator"
+app_global_get
+itxn_field Receiver
+load 4
+itxn_field Amount
+int 0
+itxn_field Fee
+itxn_submit
+byte "creator_claimed"
+int 1
+app_global_put
+int 1
+return
+main_l26:
+global GroupSize
+int 1
+==
+assert
+byte "funded_round"
+app_global_get
+int 0
+>
+assert
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+assert
+txn Sender
+byte "contrib"
+app_local_get
+store 1
+load 1
+int 0
+>
+assert
+load 1
+byte "rate"
+app_global_get
+*
+int 1000000
+/
+store 2
+load 2
+int 0
+>
+bnz main_l28
+main_l27:
+txn Sender
+byte "contrib"
+int 0
+app_local_put
+int 1
+return
+main_l28:
+itxn_begin
+int axfer
+itxn_field TypeEnum
+byte "asa_id"
+app_global_get
+itxn_field XferAsset
+txn Sender
+itxn_field AssetReceiver
+load 2
+itxn_field AssetAmount
+int 0
+itxn_field Fee
+itxn_submit
+b main_l27
+main_l29:
+global Round
+byte "deadline"
+app_global_get
+<=
+assert
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+assert
+byte "raised"
+app_global_get
+byte "goal"
+app_global_get
+<
+assert
+byte "asa_id"
+app_global_get
+int 0
+!=
+assert
+txn GroupIndex
+int 0
+==
+assert
+global GroupSize
+int 2
+==
+assert
+gtxn 1 TypeEnum
+int pay
+==
+assert
+gtxn 1 Sender
+txn Sender
+==
+assert
+gtxn 1 Receiver
+global CurrentApplicationAddress
+==
+assert
+gtxn 1 Amount
+int 0
+>
+assert
+gtxn 1 Amount
+int 1000000
+%
+int 0
+==
+assert
+gtxn 1 CloseRemainderTo
+global ZeroAddress
+==
+assert
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+assert
+byte "raised"
+app_global_get
+gtxn 1 Amount
++
+byte "goal"
+app_global_get
+<=
+assert
+txn Sender
+byte "contrib"
+txn Sender
+byte "contrib"
+app_local_get
+gtxn 1 Amount
++
+app_local_put
+byte "raised"
+app_global_get
+gtxn 1 Amount
++
+store 0
+byte "raised"
+load 0
+app_global_put
+load 0
+byte "goal"
+app_global_get
+>=
+byte "funded_round"
+app_global_get
+int 0
+==
+&&
+bnz main_l31
+main_l30:
+int 1
+return
+main_l31:
+byte "funded_round"
+global Round
+app_global_put
+b main_l30
+main_l32:
+txn Sender
+byte "creator"
+app_global_get
+==
+assert
+byte "asa_id"
+app_global_get
+int 0
+==
+assert
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+assert
+global Round
+byte "deadline"
+app_global_get
+<=
+assert
+byte "raised"
+app_global_get
+int 0
+==
+assert
+txn NumAssets
+int 1
+==
+assert
+byte "asa_id"
+txna Assets 0
+app_global_put
+txn GroupIndex
+int 0
+==
+assert
+global GroupSize
+int 2
+==
+assert
+itxn_begin
+int axfer
+itxn_field TypeEnum
+txna Assets 0
+itxn_field XferAsset
+global CurrentApplicationAddress
+itxn_field AssetReceiver
+int 0
+itxn_field AssetAmount
+int 0
+itxn_field Fee
+itxn_submit
+gtxn 1 TypeEnum
+int axfer
+==
+assert
+gtxn 1 Sender
+txn Sender
+==
+assert
+gtxn 1 AssetReceiver
+global CurrentApplicationAddress
+==
+assert
+gtxn 1 XferAsset
+txna Assets 0
+==
+assert
+gtxn 1 AssetAmount
+byte "goal"
+app_global_get
+byte "rate"
+app_global_get
+*
+int 1000000
+/
+>=
+assert
+gtxn 1 CloseRemainderTo
+global ZeroAddress
+==
+assert
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+assert
+int 1
+return
+main_l33:
+byte "cancelled"
+app_global_get
+int 1
+==
+!
+assert
+global Round
+byte "deadline"
+app_global_get
+<=
+assert
+txn Sender
+byte "contrib"
+int 0
+app_local_put
+int 1
+return
+main_l34:
+txn Sender
+byte "contrib"
+app_local_get
+int 0
+==
+assert
+int 1
+return
+main_l35:
+txn Sender
+byte "admin"
+app_global_get
+==
+assert
+byte "admin_claimed"
+app_global_get
+int 1
+==
+assert
+int 1
+return
+main_l36:
+int 0
+return
+main_l37:
+txn NumAppArgs
+int 4
+==
+assert
+txna ApplicationArgs 0
+len
+int 32
+==
+assert
+txna ApplicationArgs 1
+btoi
+int 0
+>
+assert
+txna ApplicationArgs 1
+btoi
+int 1000000
+%
+int 0
+==
+assert
+txna ApplicationArgs 1
+btoi
+int 10000000
+>=
+assert
+txna ApplicationArgs 2
+btoi
+int 0
+>
+assert
+txna ApplicationArgs 3
+btoi
+int 1
+>=
+assert
+txna ApplicationArgs 3
+btoi
+int 100
+<=
+assert
+txn GroupIndex
+int 0
+==
+assert
+global GroupSize
+int 2
+==
+assert
+gtxn 1 TypeEnum
+int pay
+==
+assert
+gtxn 1 Sender
+txn Sender
+==
+assert
+gtxn 1 Receiver
+txna ApplicationArgs 0
+==
+assert
+gtxn 1 Amount
+txna ApplicationArgs 1
+btoi
+txna ApplicationArgs 3
+btoi
+*
+int 10000
+/
+>=
+assert
+gtxn 1 CloseRemainderTo
+global ZeroAddress
+==
+assert
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+assert
+byte "creator"
+txn Sender
+app_global_put
+byte "admin"
+txna ApplicationArgs 0
+app_global_put
+byte "goal"
+txna ApplicationArgs 1
+btoi
+app_global_put
+byte "rate"
+txna ApplicationArgs 2
+btoi
+app_global_put
+byte "days"
+txna ApplicationArgs 3
+btoi
+app_global_put
+byte "deadline"
+global Round
+txna ApplicationArgs 3
+btoi
+int 10
+*
++
+app_global_put
+byte "raised"
+int 0
+app_global_put
+byte "asa_id"
+int 0
+app_global_put
+byte "funded_round"
+int 0
+app_global_put
+byte "cancelled"
+int 0
+app_global_put
+byte "creator_claimed"
+int 0
+app_global_put
+byte "admin_claimed"
+int 0
+app_global_put
+int 1
+return
