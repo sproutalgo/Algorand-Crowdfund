@@ -32,8 +32,8 @@ export default function CleanupWallet() {
       const metaMap = {}
       for (const m of metas) metaMap[String(m.app_id)] = m
 
-      // App opt-ins
-      const parsedApps = rawApps.map(entry => {
+      // App opt-ins — check on-chain existence to identify ghost apps
+      const parsedApps = await Promise.all(rawApps.map(async entry => {
         const appId = Number(entry.id ?? entry['id'])
         const meta  = metaMap[String(appId)] || null
         const kvs   = entry['key-value'] ?? entry.keyValue ?? []
@@ -44,8 +44,15 @@ export default function CleanupWallet() {
           else try { key = atob(key) } catch { continue }
           if (key === 'contrib') contrib = Number(kv.value?.uint ?? 0)
         }
-        return { appId, meta, contrib }
-      })
+        // Check if contract still exists on-chain
+        let ghost = false
+        try {
+          await algodClient.getApplicationByID(appId).do()
+        } catch {
+          ghost = true  // 404 — contract deleted, safe to force clear
+        }
+        return { appId, meta, contrib, ghost }
+      }))
       setAppEntries(parsedApps)
 
       // ASA holdings linked to platform projects
@@ -227,18 +234,20 @@ export default function CleanupWallet() {
                 <span className="faint">0.1 ALGO each</span>
               </div>
               <div className="card">
-                {appEntries.map(({ appId, meta, contrib }) => (
+                {appEntries.map(({ appId, meta, contrib, ghost }) => (
                   <div className="clean-row" key={`app-${appId}`}>
                     <div>
                       <div className="clean-name">{meta?.name || `App #${appId}`}</div>
                       <div className="mp-meta" style={{ marginTop: 6 }}>
                         <IdTag label="App" value={String(appId)} />
-                        {contrib > 0
-                          ? <span className="badge badge-warn" style={{ padding: '2px 9px', fontSize: 11 }}>⚠ Pending refund — do not clear</span>
-                          : <span className="badge" style={{ padding: '2px 9px', fontSize: 11 }}>Ready to clear</span>
+                        {ghost
+                          ? <span className="badge" style={{ padding: '2px 9px', fontSize: 11, background: 'var(--surface-2)', color: 'var(--text-muted)' }}>Contract deleted — safe to clear</span>
+                          : contrib > 0
+                            ? <span className="badge badge-warn" style={{ padding: '2px 9px', fontSize: 11 }}>⚠ Pending refund — do not clear</span>
+                            : <span className="badge" style={{ padding: '2px 9px', fontSize: 11 }}>Ready to clear</span>
                         }
                       </div>
-                      {contrib > 0 && (
+                      {!ghost && contrib > 0 && (
                         <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
                           You have {(contrib / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 6 })} ALGO pending.
                           Clearing now would forfeit it permanently.
@@ -249,29 +258,39 @@ export default function CleanupWallet() {
                       <span className="clean-amt-v">−0.1 ALGO</span>
                       <span className="faint" style={{ fontSize: 11 }}>reclaimable</span>
                     </div>
-                    {contrib > 0
+                    {ghost
                       ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                          <button className="btn btn-ghost btn-sm" disabled>Pending refund</button>
-                          <button
-                            className="btn btn-sm"
-                            style={{ background: 'var(--danger-soft)', color: 'var(--danger)', border: 'none', fontSize: 12 }}
-                            disabled={actioningId === `app-${appId}`}
-                            onClick={() => handleClearApp(appId, contrib, true)}
-                          >
-                            {actioningId === `app-${appId}` ? 'Clearing…' : 'Force clear (forfeit)'}
-                          </button>
-                        </div>
-                      )
-                      : (
                         <button
                           className="btn btn-soft btn-sm"
                           disabled={actioningId === `app-${appId}`}
-                          onClick={() => handleClearApp(appId, contrib)}
+                          onClick={() => handleClearApp(appId, 0)}
                         >
                           {actioningId === `app-${appId}` ? 'Clearing…' : 'Clear & reclaim'}
                         </button>
                       )
+                      : contrib > 0
+                        ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                            <button className="btn btn-ghost btn-sm" disabled>Pending refund</button>
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: 'var(--danger-soft)', color: 'var(--danger)', border: 'none', fontSize: 12 }}
+                              disabled={actioningId === `app-${appId}`}
+                              onClick={() => handleClearApp(appId, contrib, true)}
+                            >
+                              {actioningId === `app-${appId}` ? 'Clearing…' : 'Force clear (forfeit)'}
+                            </button>
+                          </div>
+                        )
+                        : (
+                          <button
+                            className="btn btn-soft btn-sm"
+                            disabled={actioningId === `app-${appId}`}
+                            onClick={() => handleClearApp(appId, contrib)}
+                          >
+                            {actioningId === `app-${appId}` ? 'Clearing…' : 'Clear & reclaim'}
+                          </button>
+                        )
                     }
                   </div>
                 ))}
