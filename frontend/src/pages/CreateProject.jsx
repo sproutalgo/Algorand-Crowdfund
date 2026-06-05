@@ -32,7 +32,8 @@ function validateWebsiteUrl(url) {
 const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other']
 
 const MIN_GOAL_ALGO = 10        // contract enforces >= 10_000_000 microAlgos
-const MAX_GOAL_ALGO = 100_000_000  // contract enforces <= 100_000_000_000_000 microAlgos
+const MAX_GOAL_ALGO  = 100_000_000
+const ROUNDS_PER_DAY  = 86400 / 3.3  // ~26057 rounds per day (mainnet)  // contract enforces <= 100_000_000_000_000 microAlgos
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
 const SUCCESS_FEE_PCT = 4             // 4% success fee
