@@ -90,19 +90,6 @@ export default function Home() {
     loadPage(page, filter, search)
   }, [page, loadPage])
 
-  // Reload when the tab becomes visible again — catches the case where
-  // a creator deployed a contract then navigated back to explore.
-  useEffect(() => {
-    function handleVisibility() {
-      if (document.visibilityState === 'visible') {
-        setPage(1)
-        loadPage(1, filter, search)
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
-  }, [filter, search, loadPage])
-
   // Scroll to top on page navigation so new results start at the top
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
