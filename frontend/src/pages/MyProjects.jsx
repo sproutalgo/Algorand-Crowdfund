@@ -154,7 +154,12 @@ export default function MyProjects() {
       loadProjects()
     } catch (e) {
       console.error(e)
-      addToast(e?.message || 'Setup failed', 'error')
+      const msg = e?.message || ''
+      if (msg.includes('underflow') || msg.includes('overspend') || msg.includes('below min')) {
+        addToast('Insufficient token balance. You need at least Goal × Rate tokens in your wallet to fund the token pool. Check your wallet balance and try again.', 'error', 8000)
+      } else {
+        addToast(msg || 'Setup failed', 'error')
+      }
     } finally { setSettingUp(false) }
   }
 
