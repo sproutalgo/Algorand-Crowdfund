@@ -45,11 +45,13 @@ export default function CleanupWallet() {
           if (key === 'contrib') contrib = Number(kv.value?.uint ?? 0)
         }
         // Check if contract still exists on-chain
+        // Algod may return 404 OR return the app with deleted:true
         let ghost = false
         try {
-          await algodClient.getApplicationByID(appId).do()
+          const appInfo = await algodClient.getApplicationByID(appId).do()
+          if (appInfo.deleted === true || appInfo.params === undefined) ghost = true
         } catch {
-          ghost = true  // 404 — contract deleted, safe to force clear
+          ghost = true  // 404 — contract deleted, safe to clear
         }
         return { appId, meta, contrib, ghost }
       }))
