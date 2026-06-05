@@ -36,6 +36,7 @@ const MAX_GOAL_ALGO = 100_000_000  // contract enforces <= 100_000_000_000_000 m
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
 const SUCCESS_FEE_PCT = 4             // 4% success fee
+const ROUNDS_PER_DAY  = 26_057       // matches contract (86400 / 3.3)
 
 export default function CreateProject() {
   const navigate    = useNavigate()
