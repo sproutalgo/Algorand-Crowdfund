@@ -189,8 +189,7 @@ export default function Terms() {
         <P>
           <strong>Minimum balance:</strong> A 0.4 ALGO payment is required during campaign
           setup to fund the smart contract account's Algorand network minimum balance
-          requirement. This amount is retained by Sprout Ventures LLC when the contract
-          closes and is not refunded to the Creator on either the success or failure path.
+          requirement.
         </P>
         <P>
           Sprout Ventures LLC reserves the right to modify its fee structure and will provide
