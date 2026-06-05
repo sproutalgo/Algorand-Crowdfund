@@ -55,6 +55,9 @@ export default function Home() {
         if (cached) {
           cachedMap[id] = { gs: cached, deleted: !!meta.on_chain_deleted }
         } else {
+        } else if (meta.on_chain_deleted) {
+          cachedMap[id] = { gs: {}, deleted: true }
+        } else {
           uncachedIds.push(id)
         }
       }
