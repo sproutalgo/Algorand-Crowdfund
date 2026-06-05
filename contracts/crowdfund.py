@@ -76,10 +76,11 @@ from pyteal import *
 #   forfeits their tokens; the ASA remnant goes to the admin.
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-GRACE_PERIOD_ROUNDS = Int(10)   # ~6 months at 3.3 s/block
-ROUNDS_PER_DAY      = Int(10)      # 86400 / 3.3 rounded
+GRACE_PERIOD_ROUNDS = Int(4_712_727)   # ~6 months at 3.3 s/block
+ROUNDS_PER_DAY      = Int(26_057)      # 86400 / 3.3 rounded
 MIN_DAYS            = Int(1)
 MAX_DAYS            = Int(100)
+MAX_GOAL            = Int(100_000_000_000_000)  # 100 million ALGO in microAlgos
 SUCCESS_FEE_PCT     = Int(4)
 
 # ── Global state keys ───────────────────────────────────────────────────────────
@@ -125,6 +126,7 @@ def approval_program():
         # NOTE: revisit this floor if the app ever holds more than one ASA or
         # adopts boxes — both raise the app-account min balance.
         Assert(goal_arg >= Int(10_000_000)),
+        Assert(goal_arg <= MAX_GOAL),
         Assert(Btoi(Txn.application_args[2]) > Int(0)),
         Assert(days_arg >= MIN_DAYS),
         Assert(days_arg <= MAX_DAYS),
@@ -467,7 +469,7 @@ def approval_program():
             TxnField.type_enum:          TxnType.Payment,
             TxnField.receiver:           creator,
             TxnField.amount:             Int(0),
-            TxnField.close_remainder_to: admin,
+            TxnField.close_remainder_to: creator,
             TxnField.fee:                Int(0),
         }),
         InnerTxnBuilder.Submit(),

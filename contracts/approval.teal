@@ -120,7 +120,7 @@ int 0
 global Round
 byte "funded_round"
 app_global_get
-int 10
+int 4712727
 +
 >
 &&
@@ -147,7 +147,7 @@ app_global_get
 global Round
 byte "deadline"
 app_global_get
-int 10
+int 4712727
 +
 >
 &&
@@ -175,7 +175,7 @@ int 0
 global Round
 byte "funded_round"
 app_global_get
-int 10
+int 4712727
 +
 >
 &&
@@ -194,7 +194,7 @@ app_global_get
 itxn_field Receiver
 int 0
 itxn_field Amount
-byte "admin"
+byte "creator"
 app_global_get
 itxn_field CloseRemainderTo
 int 0
@@ -253,7 +253,7 @@ int 0
 global Round
 byte "funded_round"
 app_global_get
-int 10
+int 4712727
 +
 >
 &&
@@ -275,7 +275,7 @@ app_global_get
 global Round
 byte "deadline"
 app_global_get
-int 10
+int 4712727
 +
 >
 &&
@@ -778,6 +778,11 @@ btoi
 int 10000000
 >=
 assert
+txna ApplicationArgs 1
+btoi
+int 100000000000000
+<=
+assert
 txna ApplicationArgs 2
 btoi
 int 0
@@ -853,7 +858,7 @@ byte "deadline"
 global Round
 txna ApplicationArgs 3
 btoi
-int 10
+int 26057
 *
 +
 app_global_put

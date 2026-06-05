@@ -31,7 +31,8 @@ function validateWebsiteUrl(url) {
 
 const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other']
 
-const MIN_GOAL_ALGO = 10  // contract enforces >= 10_000_000 microAlgos
+const MIN_GOAL_ALGO = 10        // contract enforces >= 10_000_000 microAlgos
+const MAX_GOAL_ALGO = 100_000_000  // contract enforces <= 100_000_000_000_000 microAlgos
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
 const SUCCESS_FEE_PCT = 4             // 4% success fee
@@ -72,7 +73,7 @@ export default function CreateProject() {
     { ok: !!activeAddress,                          label: 'Wallet connected'  },
     { ok: !!form.name.trim(),                       label: 'Project name'      },
     { ok: !!form.tagline.trim(),                    label: 'Tagline'           },
-    { ok: goal >= MIN_GOAL_ALGO,                    label: `Funding goal (min ${MIN_GOAL_ALGO} ALGO)` },
+    { ok: goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO, label: `Funding goal (${MIN_GOAL_ALGO}–${MAX_GOAL_ALGO.toLocaleString()} ALGO)` },
     { ok: rate > 0,                                 label: 'Token rate set'    },
     { ok: durDays >= MIN_DAYS && durDays <= MAX_DAYS, label: `Duration (${MIN_DAYS}–${MAX_DAYS} days)` },
     { ok: !websiteError,                            label: 'Website URL valid (or blank)' },
@@ -231,8 +232,11 @@ export default function CreateProject() {
                   {goal > 0 && goal < MIN_GOAL_ALGO && (
                     <span className="field-hint" style={{ color: 'var(--danger)' }}>Minimum goal is {MIN_GOAL_ALGO} ALGO.</span>
                   )}
-                  {(!goal || goal >= MIN_GOAL_ALGO) && (
-                    <span className="field-hint">Must be a whole number of ALGO, minimum {MIN_GOAL_ALGO} ALGO.</span>
+                  {goal > MAX_GOAL_ALGO && (
+                    <span className="field-hint" style={{ color: 'var(--danger)' }}>Maximum goal is {MAX_GOAL_ALGO.toLocaleString()} ALGO.</span>
+                  )}
+                  {(!goal || (goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO)) && (
+                    <span className="field-hint">Must be a whole number of ALGO, {MIN_GOAL_ALGO}–{MAX_GOAL_ALGO.toLocaleString()} ALGO.</span>
                   )}
                   <span className="field-hint">Whole ALGO only. The amount you need to raise to succeed.</span>
                 </div>
