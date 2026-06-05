@@ -113,7 +113,7 @@ export default function ProjectDetail() {
       loadData()
     } catch (e) {
       const msg = e?.message || ''
-      if (msg.includes('balance') && msg.includes('below min') || msg.includes('insufficient funds') || msg.includes('underflow')) {
+      if (msg.includes('overspend') || msg.includes('below min') || msg.includes('insufficient funds') || msg.includes('underflow')) {
         addToast('Insufficient funds. Remember to leave enough ALGO in your wallet to cover the contribution plus transaction fees and your wallet\'s minimum balance.', 'error', 8000)
       } else {
         addToast(msg || 'Contribution failed', 'error')
