@@ -586,6 +586,8 @@ export default function ProjectDetail() {
                     safeGs.creator && { label: 'Creator', val: shortAddr(safeGs.creator), copy: safeGs.creator },
                     safeGs.asa_id && { label: 'ASA / Token', val: String(safeGs.asa_id), copy: String(safeGs.asa_id) },
                     rate && { label: 'Token rate', val: `${tokensPerAlgo > 0 ? formatTokens(rate) : rate} / ALGO`, copy: null },
+                    deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString(), copy: null },
+                    deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString(), copy: null },
                     { label: 'Network', val: 'Algorand Testnet', copy: null },
                   ].filter(Boolean).map(({ label, val, copy }) => (
                     <div className="contract-row" key={label}>

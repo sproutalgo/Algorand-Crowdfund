@@ -32,8 +32,7 @@ function validateWebsiteUrl(url) {
 const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other']
 
 const MIN_GOAL_ALGO = 10        // contract enforces >= 10_000_000 microAlgos
-const MAX_GOAL_ALGO  = 100_000_000
-const ROUNDS_PER_DAY  = 86400 / 3.3  // ~26057 rounds per day (mainnet)  // contract enforces <= 100_000_000_000_000 microAlgos
+const MAX_GOAL_ALGO = 100_000_000  // contract enforces <= 100_000_000_000_000 microAlgos
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
 const SUCCESS_FEE_PCT = 4             // 4% success fee
@@ -262,6 +261,9 @@ export default function CreateProject() {
                         Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days.
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS
                           ? ` Listing fee: ${listingFeeAlgo} ALGO (0.01% × ${durDays} days).`
+                          : ''}
+                        {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
+                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~3.3 seconds each). Displayed days are approximate.`
                           : ''}
                       </span>
                   }
