@@ -151,7 +151,7 @@ export function shortAddr(a) {
   return s.slice(0, 6) + '…' + s.slice(-4)
 }
 
-const ROUND_SECS = 2.8
+const ROUND_SECS = 3.3
 export function daysLeftLabel(deadlineRound, currentRound) {
   if (!deadlineRound || !currentRound) return { text: '—', urgent: false, ended: false }
   const roundsLeft = deadlineRound - currentRound
