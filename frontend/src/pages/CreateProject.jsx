@@ -34,8 +34,7 @@ const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Soc
 const MIN_GOAL_ALGO = 10  // contract enforces >= 10_000_000 microAlgos
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
-const SUCCESS_FEE_PCT = 4
-const ROUNDS_PER_DAY  = 10  // shortened for testing (production: 86400 / 3.3)             // 4% success fee
+const SUCCESS_FEE_PCT = 4             // 4% success fee
 
 export default function CreateProject() {
   const navigate    = useNavigate()
@@ -115,7 +114,12 @@ export default function CreateProject() {
       navigate('/my-projects')
     } catch (e) {
       console.error(e)
-      addToast(e?.message || 'Deployment failed', 'error')
+      const msg = e?.message || ''
+      if (msg.includes('overspend') || msg.includes('below min') || msg.includes('underflow')) {
+        addToast('Insufficient funds to cover the listing fee. Make sure your wallet has enough ALGO to pay the listing fee plus transaction fees and minimum balance requirements.', 'error', 8000)
+      } else {
+        addToast(msg || 'Deployment failed', 'error')
+      }
     } finally { setSubmitting(false) }
   }
 
