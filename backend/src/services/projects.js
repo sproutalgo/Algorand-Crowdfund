@@ -30,7 +30,6 @@ export async function getPublicProjects({ page = 1, pageSize = 50 } = {}) {
     .from('projects')
     .select('*', { count: 'exact' })
     .or('is_hidden.is.null,is_hidden.eq.false')
-    .or('on_chain_deleted.is.null,on_chain_deleted.eq.false')
     .order('created_at', { ascending: false })
     .range(from, to)
 
