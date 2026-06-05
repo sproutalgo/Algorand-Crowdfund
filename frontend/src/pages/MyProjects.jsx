@@ -42,9 +42,13 @@ export default function MyProjects() {
       const uncachedIds = []
       for (const meta of metaList) {
         const id = Number(meta.app_id)
+        if (meta.on_chain_deleted) {
+          cachedMap[id] = { gs: {}, deleted: true }
+          continue
+        }
         const cached = gsFromCache(meta)
         if (cached) {
-          cachedMap[id] = { gs: cached, deleted: !!meta.on_chain_deleted }
+          cachedMap[id] = { gs: cached, deleted: false }
         } else {
           uncachedIds.push(id)
         }
