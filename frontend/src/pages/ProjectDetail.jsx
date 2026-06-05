@@ -118,7 +118,7 @@ export default function ProjectDetail() {
       } else {
         addToast(msg || 'Contribution failed', 'error')
       }
-    finally { setContributing(false) }
+    } finally { setContributing(false) }
   }
 
   async function handleFinalize() {
