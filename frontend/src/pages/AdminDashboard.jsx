@@ -30,10 +30,18 @@ export default function AdminDashboard() {
     try {
       const metas = await fetchAllProjectsAdmin({ address: activeAddress })
       const metaList = Array.isArray(metas) ? metas : []
-      const appIds = metaList.map(m => Number(m.app_id))
-      const onChain = await fetchOnChainBatch(appIds)
+
+      // Skip algod calls for already-deleted contracts
+      const uncachedIds = metaList
+        .filter(m => !m.on_chain_deleted)
+        .map(m => Number(m.app_id))
+      const onChain = uncachedIds.length > 0
+        ? await fetchOnChainBatch(uncachedIds)
+        : {}
+
       const merged = metaList.map(meta => {
         const id = Number(meta.app_id)
+        if (meta.on_chain_deleted) return { id, gs: {}, meta, deleted: true }
         const { gs, deleted } = onChain[id] ?? { gs: {}, deleted: true }
         return { id, gs, meta, deleted }
       })
