@@ -339,7 +339,7 @@ export default function MyProjects() {
                     Success fee (4%) is deducted from your payout when you claim. Listing fee was paid at deployment.
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                    Note: 0.4 ALGO is sent to the contract account to cover Algorand minimum balance requirements. This amount is retained by the platform when the contract closes and is not refunded to the creator.
+                    Note: 0.4 ALGO is sent to the contract account to cover Algorand minimum balance requirements.
                   </div>
                 </div>
               )}
