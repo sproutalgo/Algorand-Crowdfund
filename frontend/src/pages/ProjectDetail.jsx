@@ -111,7 +111,13 @@ export default function ProjectDetail() {
       addToast(`Contributed ${amt} ALGO!`, 'success')
       setContributeAmt('')
       loadData()
-    } catch (e) { addToast(e?.message || 'Contribution failed', 'error') }
+    } catch (e) {
+      const msg = e?.message || ''
+      if (msg.includes('balance') && msg.includes('below min') || msg.includes('insufficient funds') || msg.includes('underflow')) {
+        addToast('Insufficient funds. Remember to leave enough ALGO in your wallet to cover the contribution plus transaction fees and your wallet\'s minimum balance.', 'error', 8000)
+      } else {
+        addToast(msg || 'Contribution failed', 'error')
+      }
     finally { setContributing(false) }
   }
 
