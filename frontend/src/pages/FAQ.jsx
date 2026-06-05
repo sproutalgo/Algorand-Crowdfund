@@ -36,7 +36,9 @@ const SECTIONS = [
     heading: 'For Creators',
     items: [
       {
-        q: 'What does it cost to launch a campaign?',
+        q: 'What are the total costs for a creator?',
+        a: 'There are three costs to be aware of. First, the listing fee — 0.01% of your funding goal per day of campaign duration, paid upfront at deployment and non-refundable regardless of outcome. Second, the success fee — 4% of your funding goal, deducted from your payout if the campaign succeeds. Third, a 0.4 ALGO minimum balance payment made during setup to fund the contract account — this covers Algorand network requirements and is retained by the platform when the contract closes. It is not refunded to the creator on either the success or failure path. For small campaigns, this 0.4 ALGO is worth factoring into your expected net payout.',
+      },
         a: 'You pay a non-refundable listing fee at deployment, calculated as 0.01% of your funding goal per day of campaign duration. For example, a 10,000 ALGO campaign listed for 30 days costs 30 ALGO. If the campaign fails, you lose only the listing fee — no additional penalty is imposed and backers receive full refunds.',
       },
       {
