@@ -258,14 +258,14 @@ export default function CreateProject() {
                   />
                   {durError
                     ? <span className="field-hint" style={{ color: 'var(--danger)' }}>{durError}</span>
-                    : <span className="field-hint">
-                        Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days.
-                        {durDays >= MIN_DAYS && durDays <= MAX_DAYS
-                          ? ` Listing fee: ${listingFeeAlgo} ALGO (0.01% × ${durDays} days).`
-                          : ''}
+    : <span className="field-hint">
+                        <div>Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days (displayed days are approximate).</div>
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
-                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~3.3 seconds each). Displayed days are approximate.`
-                          : ''}
+                          ? <div>Duration is stored on-chain as {durRounds.toLocaleString()} rounds (~3.3 seconds each).</div>
+                          : null}
+                        {durDays >= MIN_DAYS && durDays <= MAX_DAYS
+                          ? <div>Listing fee: {listingFeeAlgo} ALGO (0.01% × {durDays} days).</div>
+                          : null}
                       </span>
                   }
                 </div>
