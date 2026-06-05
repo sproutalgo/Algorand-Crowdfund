@@ -22,6 +22,7 @@ export default function CleanupWallet() {
       const info = await algodClient.accountInformation(activeAddress).do()
       const rawApps   = info['apps-local-state'] ?? info.appsLocalState ?? []
       const rawAssets = info.assets ?? []
+      console.log('[cleanup] rawApps count:', rawApps.length, rawApps.map(a => Number(a.id ?? a['id'])))
 
       // Fetch project metadata from backend for name lookup
       let metas = []
@@ -55,6 +56,7 @@ export default function CleanupWallet() {
         }
         return { appId, meta, contrib, ghost }
       }))
+      console.log('[cleanup] parsedApps:', parsedApps.map(a => ({ appId: a.appId, ghost: a.ghost, contrib: a.contrib })))
       setAppEntries(parsedApps)
 
       // ASA holdings linked to platform projects
