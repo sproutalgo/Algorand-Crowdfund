@@ -521,11 +521,15 @@ export default function ProjectDetail() {
                   <span className="unit">ALGO</span>
                 </div>
                 <div className="amt-quick">
-                  {[10, 100, 1_000, 10_000].map(v => (
-                    <button key={v} onClick={() => setContributeAmt(String(Math.min(v, Math.floor((goal - raised) / 1_000_000))))}>
-                      {v}
-                    </button>
-                  ))}
+                  {[10, 100, 1_000, 10_000].map(v => {
+                    const remaining = Math.floor((goal - raised) / 1_000_000)
+                    const actual = Math.min(v, remaining)
+                    return (
+                      <button key={v} onClick={() => setContributeAmt(String(actual))} disabled={actual <= 0}>
+                        {actual === v ? v.toLocaleString() : actual.toLocaleString()}
+                      </button>
+                    )
+                  })}
                 </div>
                 {tokensYouGet > 0 && (
                   <div className="receive-row">
