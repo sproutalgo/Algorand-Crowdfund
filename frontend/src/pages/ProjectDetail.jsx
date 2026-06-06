@@ -521,7 +521,7 @@ export default function ProjectDetail() {
                   <span className="unit">ALGO</span>
                 </div>
                 <div className="amt-quick">
-                  {[10, 25, 50, 100].map(v => (
+                  {[10, 100, 1_000, 10_000].map(v => (
                     <button key={v} onClick={() => setContributeAmt(String(Math.min(v, Math.floor((goal - raised) / 1_000_000))))}>
                       {v}
                     </button>
