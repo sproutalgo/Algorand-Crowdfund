@@ -523,10 +523,15 @@ export default function ProjectDetail() {
                 <div className="amt-quick">
                   {[10, 100, 1_000, 10_000].map(v => {
                     const remaining = Math.floor((goal - raised) / 1_000_000)
-                    const actual = Math.min(v, remaining)
+                    const disabled = v > remaining
                     return (
-                      <button key={v} onClick={() => setContributeAmt(String(actual))} disabled={actual <= 0}>
-                        {actual === v ? v.toLocaleString() : actual.toLocaleString()}
+                      <button
+                        key={v}
+                        onClick={() => setContributeAmt(String(v))}
+                        disabled={disabled}
+                        style={disabled ? { opacity: 0.35, cursor: 'not-allowed' } : {}}
+                      >
+                        {v.toLocaleString()}
                       </button>
                     )
                   })}
