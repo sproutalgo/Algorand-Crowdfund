@@ -20,7 +20,7 @@ const SECTIONS = [
       },
       {
         q: 'What is the 6-month grace period?',
-        a: 'After a campaign ends (either by successfully reaching its goal or expiring), investors have 6 months to claim their tokens. This window exists because the contract cannot fully settle until all positions are resolved — the grace period gives every investor ample time to claim while ensuring the campaign can eventually close. After 6 months, the platform administrator may sweep unclaimed positions to complete settlement. Claim as soon as possible after a campaign ends.',
+        a: 'After a campaign ends (either by successfully reaching its goal or expiring), investors have 6 months to claim their tokens. This window exists because the contract cannot fully settle until all positions are resolved — the grace period gives every investor ample time to claim while ensuring the campaign can eventually close. After 6 months, in order to complete settlement, unclaimed tokens and ALGO will be permanently transferred to the platform — you will not be able to recover them after this point. Claim as soon as possible after a campaign ends.',
       },
       {
         q: 'Can I withdraw my contribution before the deadline?',
