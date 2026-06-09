@@ -40,7 +40,7 @@ function SeriesTimeline({ seriesId, currentAppId, meta }) {
     <div className="detail-section" style={{ marginTop: 24 }}>
       <h3>Campaign series</h3>
       <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
-        This campaign is part of a multi-milestone series. Completed milestones are verified on-chain.
+        This campaign is part of a multi-milestone series.
         <br />
         <em>Note: Milestones are creator commitments and are not enforced on-chain. Sprout does not verify milestone completion.</em>
       </p>

@@ -306,15 +306,6 @@ export default function CreateProject() {
                     Link this campaign to a series of milestones. Investors will see your track record across all campaigns in the series.
                   </p>
 
-                  <div className="field" style={{ marginBottom: 12 }}>
-                    <label>This milestone</label>
-                    <input className="input" placeholder="e.g. Milestone 1 — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
-                  </div>
-                  <div className="field" style={{ marginBottom: 12 }}>
-                    <label>Milestone description</label>
-                    <textarea className="textarea" style={{ minHeight: 60 }} placeholder="What will be delivered in this milestone?" value={milestoneDesc} onChange={e => setMilestoneDesc(e.target.value)} />
-                  </div>
-
                   {creatorProjects.filter(p => p.series_id || p.milestone_title).length > 0 && (
                     <div className="field" style={{ marginBottom: 12 }}>
                       <label>Continue existing series</label>
@@ -332,13 +323,22 @@ export default function CreateProject() {
                     </div>
                   )}
 
+                  <div className="field" style={{ marginBottom: 12 }}>
+                    <label>This milestone</label>
+                    <input className="input" placeholder="e.g. Milestone 1 — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
+                  </div>
+                  <div className="field" style={{ marginBottom: 12 }}>
+                    <label>Milestone description</label>
+                    <textarea className="textarea" style={{ minHeight: 60 }} placeholder="What will be delivered in this milestone?" value={milestoneDesc} onChange={e => setMilestoneDesc(e.target.value)} />
+                  </div>
+
                   <div className="field">
                     <label>Planned future milestones</label>
                     {plannedMilestones.map((m, i) => (
                       <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
                         <input
                           className="input"
-                          placeholder={`Milestone ${i + 2} title`}
+                          placeholder="Next Milestone Title"
                           value={m.title}
                           onChange={e => updatePlannedMilestone(i, 'title', e.target.value)}
                           style={{ flex: 1 }}
