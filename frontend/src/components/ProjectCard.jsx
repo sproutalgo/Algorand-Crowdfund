@@ -50,6 +50,9 @@ export default function ProjectCard({ project, currentRound = 0 }) {
       <div className="pcard-body">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span className="badge">{meta.category || 'Other'}</span>
+          {meta.is_donation && (
+            <span className="badge" style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent-line)" }}>Donation</span>
+          )}
           <StatusBadge status={status} />
         </div>
         <h3 className="pcard-title">{meta.name || `Project #${id}`}</h3>
