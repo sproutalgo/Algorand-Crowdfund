@@ -162,7 +162,14 @@ export default function CleanupWallet() {
     setActioningId(`app-${appId}`)
     try {
       await signAndSend(signTransactions, [(await buildClearStateTxn({ sender: activeAddress, appId })).toByte()])
-      addToast(`App local state cleared. ~0.1 ALGO reclaimed.${contrib > 0 ? ` Note: ${(contrib / 1_000_000).toFixed(6)} ALGO contribution was forfeited.` : ''}`, contrib > 0 ? 'info' : 'success')
+      const meta = appEntries.find(e => e.appId === appId)?.meta
+      const isDonationFunded = meta?.is_donation && (meta?.is_funded || meta?.is_distributed)
+      addToast(
+        contrib > 0 && !isDonationFunded
+          ? `App local state cleared. ~0.1 ALGO reclaimed. Note: ${(contrib / 1_000_000).toFixed(6)} ALGO contribution was forfeited.`
+          : 'App local state cleared. ~0.1 ALGO reclaimed.',
+        contrib > 0 && !isDonationFunded ? 'info' : 'success'
+      )
       setAppEntries(prev => prev.filter(e => e.appId !== appId))
     } catch (e) { addToast(e?.message || 'Clear state failed', 'error') }
     finally { setActioningId(null) }
@@ -322,7 +329,7 @@ export default function CleanupWallet() {
                         <button
                           className="btn btn-soft btn-sm"
                           disabled={actioningId === `app-${appId}`}
-                          onClick={() => handleClearApp(appId, contrib)}
+                          onClick={() => handleClearApp(appId, contrib, isDonationFunded)}
                         >
                           {actioningId === `app-${appId}` ? 'Clearing…' : 'Clear & reclaim'}
                         </button>
