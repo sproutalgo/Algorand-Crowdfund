@@ -179,9 +179,8 @@ export async function fetchCreatorSeries(creatorAddress) {
   return series
 }
 
-export async function markMilestoneComplete({ address, appId }) {
-  return apiFetch(`/projects/${appId}/milestone-complete`, {
+export async function markMilestoneComplete({ address, appId, signTransactions }) {
+  return authFetch(`/projects/${appId}/milestone-complete`, {
     method: 'PATCH',
-    headers: { 'x-algo-address': address },
-  })
+  }, signTransactions, address)
 }

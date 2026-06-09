@@ -155,7 +155,7 @@ export default function MyProjects() {
     setCompletingMilestone(appId)
     try {
       const { markMilestoneComplete } = await import('../utils/api')
-      await markMilestoneComplete({ address: activeAddress, appId })
+      await markMilestoneComplete({ address: activeAddress, appId, signTransactions })
       addToast('Milestone marked as complete!', 'success')
       loadProjects()
     } catch (e) {

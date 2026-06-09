@@ -287,12 +287,11 @@ router.get('/series/:seriesId', async (req, res) => {
   }
 })
 
-// Mark a milestone as complete (creator only)
-router.patch('/:appId/milestone-complete', async (req, res) => {
+// Mark a milestone as complete (creator only, signature verified)
+router.patch('/:appId/milestone-complete', requireSignature, async (req, res) => {
   try {
     const appId   = parseAppId(req.params.appId)
-    const address = req.headers['x-algo-address']
-    if (!address) return res.status(400).json({ error: 'Missing x-algo-address header' })
+    const address = req.verifiedAddress
 
     const { gs, deleted } = await fetchAppGlobalState(appId)
     if (deleted) return res.status(400).json({ error: 'App not found on chain' })
