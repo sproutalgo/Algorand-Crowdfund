@@ -90,6 +90,7 @@ router.post('/', async (req, res) => {
     const {
       appId: rawAppId, name, tagline, description, category,
       websiteUrl, deckUrl, imageUrl, goalMicro, ratePerAlgo,
+      highlights,
       isDonation, seriesId, milestoneNumber, milestoneTitle,
       milestoneDescription, plannedMilestones,
     } = req.body
@@ -122,7 +123,7 @@ router.post('/', async (req, res) => {
       appId, creatorAddress: address,
       name, tagline, description, category,
       websiteUrl, deckUrl, imageUrl, tokenName,
-      goalMicro, ratePerAlgo,
+      goalMicro, ratePerAlgo, highlights,
       isDonation, seriesId, milestoneNumber, milestoneTitle,
       milestoneDescription, plannedMilestones,
     })

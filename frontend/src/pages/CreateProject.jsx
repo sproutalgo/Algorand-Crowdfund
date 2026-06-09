@@ -160,6 +160,7 @@ export default function CreateProject() {
           name: form.name, tagline: form.tagline, description: form.description,
           category: form.category, websiteUrl: form.websiteUrl,
           tokenName: '', goalMicro, ratePerAlgo: rateArg,
+          highlights: form.highlights.filter(h => h.trim()),
           isDonation,
           seriesId,
           milestoneNumber,

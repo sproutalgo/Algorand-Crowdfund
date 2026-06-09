@@ -429,6 +429,25 @@ export default function ProjectDetail() {
             </div>
           )}
 
+          {meta.highlights?.length > 0 && (
+            <div className="detail-section" style={{ marginTop: 20 }}>
+              <h3>Why back it</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+                {meta.highlights.filter(h => h).map((h, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{
+                      flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+                      background: 'var(--accent-soft)', color: 'var(--accent)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 700, marginTop: 1,
+                    }}>✓</span>
+                    <span style={{ fontSize: 14, lineHeight: 1.5 }}>{h}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Donation campaign badge */}
           {meta.is_donation && (
             <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)' }}>
