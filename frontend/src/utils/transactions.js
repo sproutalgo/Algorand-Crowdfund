@@ -35,7 +35,12 @@ export async function buildCreateAppTxnGroup({
   const days       = Number(durationDays)
 
   // Listing fee: 0.01% of goal per day = goal × days / 10,000
-  const listingFee = Math.floor((goalMicroAlgos * days) / 10_000)
+  const rawListingFee = Math.floor((goalMicroAlgos * days) / 10_000)
+  // Donation campaigns (rate == 0) have a minimum listing fee of 10 ALGO
+  const MIN_DONATION_FEE = 10_000_000
+  const listingFee = rateAsaPerAlgo === 0
+    ? Math.max(rawListingFee, MIN_DONATION_FEE)
+    : rawListingFee
 
   const appCreateTxn = algosdk.makeApplicationCreateTxnFromObject({
     sender,
