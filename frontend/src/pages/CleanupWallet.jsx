@@ -14,6 +14,49 @@ export default function CleanupWallet() {
   const [asaEntries, setAsaEntries]   = useState([])
   const [loading, setLoading]         = useState(false)
   const [actioningId, setActioningId] = useState(null)
+  const [manualAppId, setManualAppId] = useState('')
+  const [manualStatus, setManualStatus] = useState(null)
+  const [manualClearing, setManualClearing] = useState(false)
+  const [manualDeleting, setManualDeleting] = useState(false)
+
+  async function handleManualClear() {
+    if (!manualAppId || !activeAddress) return
+    const appId = Number(manualAppId)
+    if (!appId) { setManualStatus({ msg: 'Enter a valid numeric App ID.', type: 'error' }); return }
+    const confirmed = window.confirm(
+      `⚠️ Opt out of app ${appId}?\n\nThis permanently removes your local state. Any unclaimed contributions will be forfeited.\n\nProceed?`
+    )
+    if (!confirmed) return
+    setManualClearing(true)
+    setManualStatus({ msg: 'Sending to wallet for signing…', type: 'info' })
+    try {
+      await signAndSend(signTransactions, [(await buildClearStateTxn({ sender: activeAddress, appId })).toByte()])
+      setManualStatus({ msg: `App ${appId} cleared. ~0.1 ALGO reclaimed.`, type: 'success' })
+      setManualAppId('')
+    } catch (e) {
+      setManualStatus({ msg: e?.message || 'Clear state failed.', type: 'error' })
+    } finally { setManualClearing(false) }
+  }
+
+  async function handleManualDelete() {
+    if (!manualAppId || !activeAddress) return
+    const appId = Number(manualAppId)
+    if (!appId) { setManualStatus({ msg: 'Enter a valid numeric App ID.', type: 'error' }); return }
+    const confirmed = window.confirm(
+      `⚠️ Delete app ${appId}?\n\nThis calls DeleteApplication. The contract's approval program must allow deletion from your address — it will be rejected if conditions aren't met.\n\nProceed?`
+    )
+    if (!confirmed) return
+    setManualDeleting(true)
+    setManualStatus({ msg: 'Sending to wallet for signing…', type: 'info' })
+    try {
+      const { buildDeleteAppTxn } = await import('../utils/transactions')
+      await signAndSend(signTransactions, [(await buildDeleteAppTxn({ sender: activeAddress, appId })).toByte()])
+      setManualStatus({ msg: `App ${appId} deleted successfully. Minimum balance reservation returned.`, type: 'success' })
+      setManualAppId('')
+    } catch (e) {
+      setManualStatus({ msg: e?.message || 'Delete app failed.', type: 'error' })
+    } finally { setManualDeleting(false) }
+  }
 
   const loadEntries = useCallback(async () => {
     if (!activeAddress) return
@@ -227,21 +270,33 @@ export default function CleanupWallet() {
                 <span className="faint">0.1 ALGO each</span>
               </div>
               <div className="card">
-                {appEntries.map(({ appId, meta, contrib }) => (
+                {appEntries.map(({ appId, meta, contrib }) => {
+                  // Donation campaigns: contrib is a historical record, not a pending claim
+                  // Safe to clear if the campaign is funded (ALGO already with creator)
+                  // or if it's a donation campaign generally (no token claim possible)
+                  const isDonationFunded = meta?.is_donation && (meta?.is_funded || meta?.is_distributed)
+                  const hasPendingClaim  = contrib > 0 && !isDonationFunded
+
+                  return (
                   <div className="clean-row" key={`app-${appId}`}>
                     <div>
                       <div className="clean-name">{meta?.name || `App #${appId}`}</div>
                       <div className="mp-meta" style={{ marginTop: 6 }}>
                         <IdTag label="App" value={String(appId)} />
-                        {contrib > 0
+                        {hasPendingClaim
                           ? <span className="badge badge-warn" style={{ padding: '2px 9px', fontSize: 11 }}>⚠ Pending refund — do not clear</span>
                           : <span className="badge" style={{ padding: '2px 9px', fontSize: 11 }}>Ready to clear</span>
                         }
                       </div>
-                      {contrib > 0 && (
+                      {hasPendingClaim && (
                         <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
                           You have {(contrib / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 6 })} ALGO pending.
                           Clearing now would forfeit it permanently.
+                        </div>
+                      )}
+                      {isDonationFunded && contrib > 0 && (
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                          Donation campaign — your contribution has already been received by the creator.
                         </div>
                       )}
                     </div>
@@ -249,7 +304,7 @@ export default function CleanupWallet() {
                       <span className="clean-amt-v">−0.1 ALGO</span>
                       <span className="faint" style={{ fontSize: 11 }}>reclaimable</span>
                     </div>
-                    {contrib > 0
+                    {hasPendingClaim
                       ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                           <button className="btn btn-ghost btn-sm" disabled>Pending refund</button>
@@ -274,7 +329,8 @@ export default function CleanupWallet() {
                       )
                     }
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -322,6 +378,67 @@ export default function CleanupWallet() {
         Token close-outs send any remaining balance to the project creator and release the 0.1 ALGO reservation.
         Only Sprout project tokens are shown here.
       </div>
+
+      {/* Manual opt-out tool */}
+      <div className="cleanup-section" style={{ marginTop: 40 }}>
+        <div className="cleanup-head">
+          <h3>Manual opt-out</h3>
+          <span className="faint">for orphaned or non-Sprout apps</span>
+        </div>
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <p style={{ fontSize: 13.5, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.6 }}>
+            If an app doesn't appear above — for example, an orphaned contract from a failed deployment —
+            enter its App ID below to opt out directly from your connected wallet.
+          </p>
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>App ID</label>
+              <input
+                className="input"
+                type="text"
+                inputMode="numeric"
+                placeholder="e.g. 763956173"
+                value={manualAppId}
+                onChange={e => { setManualAppId(e.target.value.replace(/\D/g, '')); setManualStatus(null) }}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button
+              className="btn btn-soft btn-sm"
+              disabled={manualClearing || manualDeleting || !manualAppId}
+              onClick={handleManualClear}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {manualClearing ? 'Processing…' : 'Opt out (ClearState)'}
+            </button>
+            <button
+              className="btn btn-sm"
+              style={{ whiteSpace: 'nowrap', background: 'var(--danger-soft)', color: 'var(--danger)', border: 'none' }}
+              disabled={manualClearing || manualDeleting || !manualAppId}
+              onClick={handleManualDelete}
+            >
+              {manualDeleting ? 'Deleting…' : 'Delete app'}
+            </button>
+          </div>
+
+          {manualStatus && (
+            <div style={{
+              padding: '10px 14px', borderRadius: 8, fontSize: 13,
+              background: manualStatus.type === 'error' ? 'var(--danger-soft)' : manualStatus.type === 'success' ? 'var(--success-soft)' : 'var(--surface-2)',
+              color: manualStatus.type === 'error' ? 'var(--danger)' : manualStatus.type === 'success' ? 'var(--success)' : 'var(--text-muted)',
+            }}>
+              {manualStatus.msg}
+            </div>
+          )}
+
+          <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--danger-soft)', borderRadius: 8, borderLeft: '3px solid var(--danger)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <strong style={{ color: 'var(--danger)' }}>Warning:</strong> ClearState permanently deletes your local state for this app.
+            Any unclaimed contributions will be forfeited. Only use this for apps where the contract no longer exists on-chain.
+          </div>
+        </div>
+      </div>
+
       <div style={{ height: 64 }} />
     </div>
   )
