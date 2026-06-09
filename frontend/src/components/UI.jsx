@@ -151,7 +151,7 @@ export function shortAddr(a) {
   return s.slice(0, 6) + '…' + s.slice(-4)
 }
 
-const ROUND_SECS = 3.3
+const ROUND_SECS = 2.8
 export function daysLeftLabel(deadlineRound, currentRound) {
   if (!deadlineRound || !currentRound) return { text: '—', urgent: false, ended: false }
   const roundsLeft = deadlineRound - currentRound
@@ -170,7 +170,7 @@ export function deriveProjectStatus(p, currentRound = 0) {
   if (m.is_funded) return 'funded'
   if (m.is_cancelled || Number(p.gs?.cancelled ?? 0) === 1) return 'cancelled'
   if (m.is_refunded) return 'failed'
-  if (!p.gs?.asa_id) return 'needs-setup'
+  if (!p.gs?.asa_id && !p.meta?.is_donation) return 'needs-setup'
   const raised      = Number(p.gs?.raised       ?? 0)
   const goal        = Number(p.gs?.goal         ?? 1)
   const fundedRound = Number(p.gs?.funded_round ?? 0)
