@@ -90,6 +90,8 @@ router.post('/', async (req, res) => {
     const {
       appId: rawAppId, name, tagline, description, category,
       websiteUrl, deckUrl, imageUrl, goalMicro, ratePerAlgo,
+      isDonation, seriesId, milestoneNumber, milestoneTitle,
+      milestoneDescription, plannedMilestones,
     } = req.body
 
     const appId = parseAppId(rawAppId)
@@ -121,6 +123,8 @@ router.post('/', async (req, res) => {
       name, tagline, description, category,
       websiteUrl, deckUrl, imageUrl, tokenName,
       goalMicro, ratePerAlgo,
+      isDonation, seriesId, milestoneNumber, milestoneTitle,
+      milestoneDescription, plannedMilestones,
     })
 
     // Populate on_chain_* cache immediately so the explore and My Projects
@@ -262,6 +266,51 @@ router.delete('/:appId', requireAdmin, async (req, res) => {
     if (e.status === 400) return res.status(400).json({ error: e.message })
     console.error(e)
     res.status(500).json({ error: 'Failed to delete project' })
+  }
+})
+
+// Get all campaigns in a series by series_id
+router.get('/series/:seriesId', async (req, res) => {
+  try {
+    const { seriesId } = req.params
+    const { data, error } = await (await import('../utils/supabase.js')).supabasePublic
+      .from('projects')
+      .select('app_id, name, tagline, goal_micro, milestone_number, milestone_title, milestone_description, milestone_completed_at, is_funded, is_distributed, on_chain_raised, on_chain_funded_round, created_at')
+      .eq('series_id', seriesId)
+      .order('milestone_number', { ascending: true })
+    if (error) throw error
+    res.json(data ?? [])
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to fetch series' })
+  }
+})
+
+// Mark a milestone as complete (creator only)
+router.patch('/:appId/milestone-complete', async (req, res) => {
+  try {
+    const appId   = parseAppId(req.params.appId)
+    const address = req.headers['x-algo-address']
+    if (!address) return res.status(400).json({ error: 'Missing x-algo-address header' })
+
+    const { gs, deleted } = await fetchAppGlobalState(appId)
+    if (deleted) return res.status(400).json({ error: 'App not found on chain' })
+    if (!gs.creator || gs.creator !== address) {
+      return res.status(403).json({ error: 'Not authorised — must be on-chain creator' })
+    }
+
+    const { supabase } = await import('../utils/supabase.js')
+    const { data, error } = await supabase
+      .from('projects')
+      .update({ milestone_completed_at: new Date().toISOString() })
+      .eq('app_id', Number(appId))
+      .select()
+      .single()
+    if (error) throw error
+    res.json(data)
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to mark milestone complete' })
   }
 })
 

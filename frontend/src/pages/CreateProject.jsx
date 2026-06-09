@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { algodClient, algoToMicro, ADMIN_ADDRESS, signAndSend } from '../utils/algorand'
 import { buildCreateAppTxnGroup, compileTeal } from '../utils/transactions'
-import { registerProject } from '../utils/api'
+import { registerProject, fetchCreatorProjectsMeta } from '../utils/api'
 import { useToast } from '../context/ToastContext'
 import { Icon } from '../components/UI'
 
@@ -13,12 +13,10 @@ import CLEAR_TEAL    from '../../../contracts/clear.teal?raw'
 const ALLOWED_WEBSITE_DOMAINS = ['x.com', 'twitter.com', 'github.com', 'linkedin.com']
 
 function validateWebsiteUrl(url) {
-  if (!url) return null  // optional field
+  if (!url) return null
   try {
     const parsed = new URL(url)
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      return 'URL must start with https://'
-    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) return 'URL must start with https://'
     const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
     if (!ALLOWED_WEBSITE_DOMAINS.includes(host)) {
       return `Only links from ${ALLOWED_WEBSITE_DOMAINS.join(', ')} are accepted`
@@ -31,12 +29,13 @@ function validateWebsiteUrl(url) {
 
 const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other']
 
-const MIN_GOAL_ALGO = 10        // contract enforces >= 10_000_000 microAlgos
-const MAX_GOAL_ALGO = 100_000_000  // contract enforces <= 100_000_000_000_000 microAlgos
+const MIN_GOAL_ALGO   = 10
+const MAX_GOAL_ALGO   = 100_000_000
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
-const SUCCESS_FEE_PCT = 4             // 4% success fee
-const ROUNDS_PER_DAY  = 26_057       // matches contract (86400 / 3.3)
+const SUCCESS_FEE_PCT = 4
+const ROUNDS_PER_DAY  = 86400 / 3.3
+const MIN_DONATION_LISTING_FEE = 10 // ALGO
 
 export default function CreateProject() {
   const navigate    = useNavigate()
@@ -45,24 +44,47 @@ export default function CreateProject() {
   const [step, setStep]             = useState(1)
   const [submitting, setSubmitting] = useState(false)
 
+  // Campaign type: 'token' or 'donation'
+  const [campaignType, setCampaignType] = useState('token')
+  const isDonation = campaignType === 'donation'
+
   const [form, setForm] = useState({
     name: '', tagline: '', description: '', category: 'DeFi',
     highlights: ['', '', ''], websiteUrl: '',
     goalAlgo: '', ratePerAlgo: '', durationDays: '',
   })
 
-  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target ? e.target.value : e }))
-  const setHi = (i) => (e) => { const h = [...form.highlights]; h[i] = e.target.value; setForm(f => ({ ...f, highlights: h })) }
+  // Series / milestones
+  const [creatorProjects, setCreatorProjects] = useState([])
+  const [selectedSeriesAppId, setSelectedSeriesAppId] = useState('')
+  const [milestoneTitle, setMilestoneTitle]   = useState('')
+  const [milestoneDesc, setMilestoneDesc]     = useState('')
+  const [plannedMilestones, setPlannedMilestones] = useState([{ title: '', description: '' }])
+
+  // Load creator's existing projects for series linking
+  useEffect(() => {
+    if (!activeAddress) return
+    fetchCreatorProjectsMeta(activeAddress)
+      .then(metas => setCreatorProjects(Array.isArray(metas) ? metas : []))
+      .catch(() => {})
+  }, [activeAddress])
+
+  const set     = (k) => (e) => setForm(f => ({ ...f, [k]: e.target ? e.target.value : e }))
+  const setHi   = (i) => (e) => { const h = [...form.highlights]; h[i] = e.target.value; setForm(f => ({ ...f, highlights: h })) }
   const onlyInt = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value.replace(/[^0-9]/g, '') }))
 
-  const goal        = Number(form.goalAlgo)    || 0
-  const rate        = Number(form.ratePerAlgo) || 0
-  const durDays     = Number(form.durationDays) || 0
-  const durRounds   = Math.round(durDays * ROUNDS_PER_DAY)
-  // Listing fee: 0.01% of goal per day
-  const listingFeeAlgo  = goal && durDays ? ((goal * durDays) / 10_000).toFixed(3) : null
+  const goal    = Number(form.goalAlgo)    || 0
+  const rate    = Number(form.ratePerAlgo) || 0
+  const durDays = Number(form.durationDays) || 0
+  const durRounds = Math.round(durDays * ROUNDS_PER_DAY)
+
+  // Listing fee — donation campaigns have a minimum of 10 ALGO
+  const rawListingFee = goal && durDays ? (goal * durDays) / 10_000 : 0
+  const listingFeeAlgo = isDonation
+    ? Math.max(rawListingFee, MIN_DONATION_LISTING_FEE).toFixed(3)
+    : rawListingFee > 0 ? rawListingFee.toFixed(3) : null
   const successFeeAlgo  = goal ? (goal * SUCCESS_FEE_PCT / 100).toFixed(2) : null
-  const tokensNeeded    = goal && rate ? (goal * rate).toLocaleString() : null
+  const tokensNeeded    = !isDonation && goal && rate ? (goal * rate).toLocaleString() : null
 
   const durError = durDays > 0 && (durDays < MIN_DAYS || durDays > MAX_DAYS)
     ? `Duration must be between ${MIN_DAYS} and ${MAX_DAYS} days`
@@ -71,15 +93,26 @@ export default function CreateProject() {
   const websiteError = validateWebsiteUrl(form.websiteUrl)
 
   const checklist = [
-    { ok: !!activeAddress,                          label: 'Wallet connected'  },
-    { ok: !!form.name.trim(),                       label: 'Project name'      },
-    { ok: !!form.tagline.trim(),                    label: 'Tagline'           },
-    { ok: goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO, label: `Funding goal (${MIN_GOAL_ALGO}–${MAX_GOAL_ALGO.toLocaleString()} ALGO)` },
-    { ok: rate > 0,                                 label: 'Token rate set'    },
-    { ok: durDays >= MIN_DAYS && durDays <= MAX_DAYS, label: `Duration (${MIN_DAYS}–${MAX_DAYS} days)` },
-    { ok: !websiteError,                            label: 'Website URL valid (or blank)' },
+    { ok: !!activeAddress,                                          label: 'Wallet connected' },
+    { ok: !!form.name.trim(),                                       label: 'Project name' },
+    { ok: !!form.tagline.trim(),                                    label: 'Tagline' },
+    { ok: goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO,           label: `Funding goal (${MIN_GOAL_ALGO}–${MAX_GOAL_ALGO.toLocaleString()} ALGO)` },
+    ...(!isDonation ? [{ ok: rate > 0, label: 'Token rate set' }] : []),
+    { ok: durDays >= MIN_DAYS && durDays <= MAX_DAYS,               label: `Duration (${MIN_DAYS}–${MAX_DAYS} days)` },
+    { ok: !websiteError,                                            label: 'Website URL valid (or blank)' },
   ]
   const allOk = checklist.every(c => c.ok)
+
+  // Planned milestones helpers
+  function addPlannedMilestone() {
+    setPlannedMilestones(m => [...m, { title: '', description: '' }])
+  }
+  function removePlannedMilestone(i) {
+    setPlannedMilestones(m => m.filter((_, idx) => idx !== i))
+  }
+  function updatePlannedMilestone(i, field, value) {
+    setPlannedMilestones(m => m.map((item, idx) => idx === i ? { ...item, [field]: value } : item))
+  }
 
   async function handleDeploy() {
     if (!activeAddress) return addToast('Connect your wallet first', 'info')
@@ -92,27 +125,51 @@ export default function CreateProject() {
       const approvalProgram = await compileTeal(APPROVAL_TEAL)
       const clearProgram    = await compileTeal(CLEAR_TEAL)
       const goalMicro       = algoToMicro(goal)
+      const rateArg         = isDonation ? 0 : rate
 
       const { txns, listingFee } = await buildCreateAppTxnGroup({
         sender: activeAddress, approvalProgram, clearProgram,
         adminAddress: ADMIN_ADDRESS, goalMicroAlgos: goalMicro,
-        rateAsaPerAlgo: rate, durationDays: durDays,
+        rateAsaPerAlgo: rateArg, durationDays: durDays,
       })
 
       addToast(`Listing fee: ${(listingFee / 1_000_000).toFixed(3)} ALGO — approve both transactions.`, 'info', 6000)
       const confirmation = await signAndSend(signTransactions, txns.map(t => t.toByte()))
       const newAppId = Number(confirmation['application-index'] ?? confirmation.applicationIndex ?? 0)
 
+      // Determine series info
+      let seriesId = null
+      let milestoneNumber = null
+      if (selectedSeriesAppId) {
+        const parent = creatorProjects.find(p => String(p.app_id) === selectedSeriesAppId)
+        seriesId = parent?.series_id || String(parent?.app_id)
+        // Count existing milestones in series to determine next number
+        const seriesMembers = creatorProjects.filter(p => p.series_id === seriesId || String(p.app_id) === seriesId)
+        milestoneNumber = seriesMembers.length + 1
+      } else if (milestoneTitle) {
+        // New series — use the new app ID as the series ID
+        seriesId = String(newAppId)
+        milestoneNumber = 1
+      }
+
+      const validPlanned = plannedMilestones.filter(m => m.title.trim())
+
       await registerProject({
         address: activeAddress, appId: newAppId,
         meta: {
           name: form.name, tagline: form.tagline, description: form.description,
           category: form.category, websiteUrl: form.websiteUrl,
-          tokenName: '', goalMicro, ratePerAlgo: rate,
+          tokenName: '', goalMicro, ratePerAlgo: rateArg,
+          isDonation,
+          seriesId,
+          milestoneNumber,
+          milestoneTitle:       milestoneTitle || null,
+          milestoneDescription: milestoneDesc  || null,
+          plannedMilestones:    validPlanned.length > 0 ? validPlanned : null,
         },
       })
       addToast(`Deployed! App ID: ${newAppId}`, 'success')
-      addToast('Go to My Projects → Set up contract to fund the token pool.', 'info', 8000)
+      if (!isDonation) addToast('Go to My Projects → Set up contract to fund the token pool.', 'info', 8000)
       navigate('/my-projects')
     } catch (e) {
       console.error(e)
@@ -133,14 +190,12 @@ export default function CreateProject() {
 
   return (
     <div className="wrap rise">
-      {/* Head */}
       <div className="launch-head">
         <span className="eyebrow">Create</span>
         <h1 style={{ marginTop: 12 }}>Launch your project</h1>
         <p>Deploy a permissionless crowdfunding contract to Algorand Testnet. Takes about two minutes.</p>
       </div>
 
-      {/* Stepper */}
       <div className="stepper">
         {steps.map((s, i) => (
           <React.Fragment key={s.n}>
@@ -156,7 +211,6 @@ export default function CreateProject() {
       </div>
 
       <div className="launch-grid">
-        {/* Form */}
         <div>
           {step === 1 && (
             <div className="card form-card rise">
@@ -168,6 +222,37 @@ export default function CreateProject() {
                 </div>
               </div>
               <div className="form-stack">
+                {/* Campaign type toggle */}
+                <div className="field" style={{ marginBottom: 8 }}>
+                  <label>Campaign type</label>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+                    {[
+                      { v: 'token',    l: 'Token launch', desc: 'Backers receive project tokens' },
+                      { v: 'donation', l: 'Donation',     desc: 'Pure fundraise, no tokens' },
+                    ].map(({ v, l, desc }) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setCampaignType(v)}
+                        style={{
+                          flex: 1, padding: '10px 14px', borderRadius: 'var(--r-sm)', textAlign: 'left',
+                          border: campaignType === v ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                          background: campaignType === v ? 'var(--accent-soft)' : 'var(--surface)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: 13, color: campaignType === v ? 'var(--accent)' : 'var(--text)' }}>{l}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                  {isDonation && (
+                    <span className="field-hint" style={{ marginTop: 8 }}>
+                      Donation campaigns have a minimum listing fee of {MIN_DONATION_LISTING_FEE} ALGO. Backers contribute ALGO and receive nothing in return — pure fundraising.
+                    </span>
+                  )}
+                </div>
+
                 <div className="form-grid">
                   <div className="field span-2">
                     <label>Project name *</label>
@@ -197,7 +282,7 @@ export default function CreateProject() {
                         </div>
                       ))}
                     </div>
-                    <span className="field-hint">Three scannable reasons shown to backers. Keep each short.</span>
+                    <span className="field-hint">Three scannable reasons shown to backers.</span>
                   </div>
                   <div className="field span-2">
                     <label>Website (optional)</label>
@@ -211,6 +296,62 @@ export default function CreateProject() {
                       ? <span className="field-hint" style={{ color: 'var(--danger)' }}>{websiteError}</span>
                       : <span className="field-hint">Accepted: x.com, twitter.com, github.com, linkedin.com</span>
                     }
+                  </div>
+                </div>
+
+                {/* Series / milestone section */}
+                <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Campaign series (optional)</h4>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.5 }}>
+                    Link this campaign to a series of milestones. Investors will see your track record across all campaigns in the series.
+                  </p>
+
+                  <div className="field" style={{ marginBottom: 12 }}>
+                    <label>This milestone</label>
+                    <input className="input" placeholder="e.g. Milestone 1 — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
+                  </div>
+                  <div className="field" style={{ marginBottom: 12 }}>
+                    <label>Milestone description</label>
+                    <textarea className="textarea" style={{ minHeight: 60 }} placeholder="What will be delivered in this milestone?" value={milestoneDesc} onChange={e => setMilestoneDesc(e.target.value)} />
+                  </div>
+
+                  {creatorProjects.filter(p => p.series_id || p.milestone_title).length > 0 && (
+                    <div className="field" style={{ marginBottom: 12 }}>
+                      <label>Continue existing series</label>
+                      <select className="input" value={selectedSeriesAppId} onChange={e => setSelectedSeriesAppId(e.target.value)}>
+                        <option value="">— Start a new series —</option>
+                        {creatorProjects
+                          .filter(p => p.milestone_title)
+                          .map(p => (
+                            <option key={p.app_id} value={String(p.app_id)}>
+                              {p.name} (App #{p.app_id})
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="field">
+                    <label>Planned future milestones</label>
+                    {plannedMilestones.map((m, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                        <input
+                          className="input"
+                          placeholder={`Milestone ${i + 2} title`}
+                          value={m.title}
+                          onChange={e => updatePlannedMilestone(i, 'title', e.target.value)}
+                          style={{ flex: 1 }}
+                        />
+                        <button type="button" onClick={() => removePlannedMilestone(i)} className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)', padding: '6px 10px' }}>✕</button>
+                      </div>
+                    ))}
+                    {plannedMilestones.length < 4 && (
+                      <button type="button" onClick={addPlannedMilestone} className="btn btn-ghost btn-sm" style={{ marginTop: 4 }}>
+                        + Add planned milestone
+                      </button>
+                    )}
+                    <span className="field-hint">Up to 4 future milestones. Shown as roadmap on your campaign page.</span>
                   </div>
                 </div>
               </div>
@@ -239,33 +380,39 @@ export default function CreateProject() {
                   {(!goal || (goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO)) && (
                     <span className="field-hint">Must be a whole number of ALGO, {MIN_GOAL_ALGO}–{MAX_GOAL_ALGO.toLocaleString()} ALGO.</span>
                   )}
-                  <span className="field-hint">Whole ALGO only. The amount you need to raise to succeed.</span>
                 </div>
-                <div className="field">
-                  <label>Token rate (per ALGO) *</label>
-                  <input className="input no-spin" type="text" inputMode="numeric" placeholder="1000" value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
-                  <span className="field-hint">Whole tokens only. How many tokens each ALGO contribution buys.</span>
-                </div>
+
+                {!isDonation && (
+                  <div className="field">
+                    <label>Token rate (per ALGO) *</label>
+                    <input className="input no-spin" type="text" inputMode="numeric" placeholder="1000" value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
+                    <span className="field-hint">
+                      How many tokens each ALGO contribution receives. Enter the number of display tokens (e.g. 1 token per ALGO = enter 1). The rate is adjusted automatically for token decimals during setup.
+                    </span>
+                  </div>
+                )}
+
                 <div className="field span-2">
                   <label>Campaign duration (days) *</label>
                   <input
                     className={`input no-spin${durError ? ' input-error' : ''}`}
                     type="text"
                     inputMode="numeric"
-                    placeholder={`e.g. 30`}
+                    placeholder="e.g. 30"
                     value={form.durationDays}
                     onChange={onlyInt('durationDays')}
                   />
                   {durError
                     ? <span className="field-hint" style={{ color: 'var(--danger)' }}>{durError}</span>
-    : <span className="field-hint">
-                        <div>Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days (displayed days are approximate).</div>
+                    : <span className="field-hint">
+                        Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days.
+                        {durDays >= MIN_DAYS && durDays <= MAX_DAYS && listingFeeAlgo
+                          ? ` Listing fee: ${listingFeeAlgo} ALGO.`
+                          : ''}
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
-                          ? <div>Duration is stored on-chain as {durRounds.toLocaleString()} rounds (~3.3 seconds each).</div>
-                          : null}
-                        {durDays >= MIN_DAYS && durDays <= MAX_DAYS
-                          ? <div>Listing fee: {listingFeeAlgo} ALGO (0.01% × {durDays} days).</div>
-                          : null}
+                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~3.3 seconds each). Displayed days are approximate.`
+                          : ''}
+                        {isDonation && ` Donation campaigns have a minimum listing fee of ${MIN_DONATION_LISTING_FEE} ALGO.`}
                       </span>
                   }
                 </div>
@@ -295,7 +442,10 @@ export default function CreateProject() {
                   <div className="ring"><Icon.bolt /></div>
                   <h3 style={{ fontSize: 26 }}>Ready to deploy</h3>
                   <p className="muted" style={{ marginTop: 12, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
-                    <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {goal.toLocaleString()} ALGO over {durDays} days at {rate} tokens per ALGO. Listing fee: {listingFeeAlgo} ALGO paid at deploy. Success fee: {successFeeAlgo} ALGO (4%) if funded.
+                    <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {goal.toLocaleString()} ALGO over {durDays} days
+                    {!isDonation ? ` at ${rate} tokens per ALGO` : ' as a donation campaign'}.
+                    Listing fee: {listingFeeAlgo} ALGO paid at deploy.
+                    Success fee: {successFeeAlgo} ALGO (4%) if funded.
                   </p>
                   <button
                     className="btn btn-primary btn-lg"
@@ -311,7 +461,6 @@ export default function CreateProject() {
             </div>
           )}
 
-          {/* Nav buttons */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
             <button className="btn btn-ghost" disabled={step === 1} style={{ opacity: step === 1 ? 0.4 : 1 }} onClick={() => setStep(s => Math.max(1, s - 1))}>
               Back
@@ -324,17 +473,18 @@ export default function CreateProject() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <aside>
           <div className="card summary-card">
             <h4>Deployment summary</h4>
             {[
+              { l: 'Campaign type',     v: isDonation ? 'Donation' : 'Token launch' },
               { l: 'Funding goal',      v: goal ? `${goal.toLocaleString()} ALGO` : '—' },
-              { l: 'Token rate',        v: rate ? `${rate} tokens / ALGO` : '—' },
+              ...(!isDonation ? [{ l: 'Token rate', v: rate ? `${rate} tokens / ALGO` : '—' }] : []),
               { l: 'Duration',          v: durDays >= MIN_DAYS && durDays <= MAX_DAYS ? `${durDays} days` : '—' },
               { l: 'Listing fee',       v: listingFeeAlgo ? `${listingFeeAlgo} ALGO` : '—' },
               { l: 'Success fee (4%)',  v: successFeeAlgo ? `${successFeeAlgo} ALGO` : '—' },
-              { l: 'Tokens to provide', v: tokensNeeded || '—' },
+              ...(!isDonation && tokensNeeded ? [{ l: 'Tokens to provide', v: tokensNeeded }] : []),
+              ...(milestoneTitle ? [{ l: 'Milestone', v: milestoneTitle }] : []),
             ].map(({ l, v }) => (
               <div className="sum-row" key={l}>
                 <span className="s-lbl">{l}</span>

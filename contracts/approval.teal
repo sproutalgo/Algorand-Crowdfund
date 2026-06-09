@@ -2,23 +2,23 @@
 txn ApplicationID
 int 0
 ==
-bnz main_l37
+bnz main_l40
 txn OnCompletion
 int UpdateApplication
 ==
-bnz main_l36
+bnz main_l39
 txn OnCompletion
 int DeleteApplication
 ==
-bnz main_l35
+bnz main_l38
 txn OnCompletion
 int CloseOut
 ==
-bnz main_l34
+bnz main_l37
 txn OnCompletion
 int OptIn
 ==
-bnz main_l33
+bnz main_l36
 txn OnCompletion
 int NoOp
 ==
@@ -28,11 +28,11 @@ main_l7:
 txna ApplicationArgs 0
 byte "setup"
 ==
-bnz main_l32
+bnz main_l35
 txna ApplicationArgs 0
 byte "contribute"
 ==
-bnz main_l29
+bnz main_l30
 txna ApplicationArgs 0
 byte "finalize"
 ==
@@ -482,6 +482,19 @@ load 1
 int 0
 >
 assert
+byte "rate"
+app_global_get
+int 0
+!=
+bnz main_l28
+main_l27:
+txn Sender
+byte "contrib"
+int 0
+app_local_put
+int 1
+return
+main_l28:
 load 1
 byte "rate"
 app_global_get
@@ -492,15 +505,7 @@ store 2
 load 2
 int 0
 >
-bnz main_l28
-main_l27:
-txn Sender
-byte "contrib"
-int 0
-app_local_put
-int 1
-return
-main_l28:
+bz main_l27
 itxn_begin
 int axfer
 itxn_field TypeEnum
@@ -515,7 +520,7 @@ int 0
 itxn_field Fee
 itxn_submit
 b main_l27
-main_l29:
+main_l30:
 global Round
 byte "deadline"
 app_global_get
@@ -533,11 +538,12 @@ byte "goal"
 app_global_get
 <
 assert
-byte "asa_id"
+byte "rate"
 app_global_get
 int 0
 !=
-assert
+bnz main_l34
+main_l31:
 txn GroupIndex
 int 0
 ==
@@ -609,16 +615,23 @@ app_global_get
 int 0
 ==
 &&
-bnz main_l31
-main_l30:
+bnz main_l33
+main_l32:
 int 1
 return
-main_l31:
+main_l33:
 byte "funded_round"
 global Round
 app_global_put
-b main_l30
-main_l32:
+b main_l32
+main_l34:
+byte "asa_id"
+app_global_get
+int 0
+!=
+assert
+b main_l31
+main_l35:
 txn Sender
 byte "creator"
 app_global_get
@@ -708,7 +721,7 @@ global ZeroAddress
 assert
 int 1
 return
-main_l33:
+main_l36:
 byte "cancelled"
 app_global_get
 int 1
@@ -726,7 +739,7 @@ int 0
 app_local_put
 int 1
 return
-main_l34:
+main_l37:
 txn Sender
 byte "contrib"
 app_local_get
@@ -735,7 +748,7 @@ int 0
 assert
 int 1
 return
-main_l35:
+main_l38:
 txn Sender
 byte "admin"
 app_global_get
@@ -748,10 +761,10 @@ int 1
 assert
 int 1
 return
-main_l36:
+main_l39:
 int 0
 return
-main_l37:
+main_l40:
 txn NumAppArgs
 int 4
 ==
@@ -782,11 +795,6 @@ txna ApplicationArgs 1
 btoi
 int 100000000000000
 <=
-assert
-txna ApplicationArgs 2
-btoi
-int 0
->
 assert
 txna ApplicationArgs 3
 btoi
@@ -819,6 +827,11 @@ txna ApplicationArgs 0
 ==
 assert
 gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+int 0
+==
+bnz main_l43
 txna ApplicationArgs 1
 btoi
 txna ApplicationArgs 3
@@ -826,6 +839,7 @@ btoi
 *
 int 10000
 /
+main_l42:
 >=
 assert
 gtxn 1 CloseRemainderTo
@@ -882,3 +896,25 @@ int 0
 app_global_put
 int 1
 return
+main_l43:
+txna ApplicationArgs 1
+btoi
+txna ApplicationArgs 3
+btoi
+*
+int 10000
+/
+int 10000000
+<
+bnz main_l45
+txna ApplicationArgs 1
+btoi
+txna ApplicationArgs 3
+btoi
+*
+int 10000
+/
+b main_l42
+main_l45:
+int 10000000
+b main_l42

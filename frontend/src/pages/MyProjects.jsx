@@ -22,11 +22,21 @@ export default function MyProjects() {
   const [loading, setLoading]     = useState(true)
   const [filter, setFilter]       = useState('All')
   const [setupModal, setSetupModal] = useState(null)
-  const [setupForm, setSetupForm] = useState({ asaId: '', goalAlgo: '', ratePerAlgo: '' })
-  const [settingUp, setSettingUp] = useState(false)
-  const [asaInfo, setAsaInfo]     = useState(null)   // { symbol, name } fetched from algod
+  const [setupTab, setSetupTab]     = useState('existing') // 'existing' | 'create'
+  const [setupForm, setSetupForm]   = useState({ asaId: '', goalAlgo: '', ratePerAlgo: '' })
+  const [settingUp, setSettingUp]   = useState(false)
+  const [asaInfo, setAsaInfo]       = useState(null)
   const [asaFetching, setAsaFetching] = useState(false)
-  const [asaError, setAsaError]   = useState(null)
+  const [asaError, setAsaError]     = useState(null)
+  const [asaDecimals, setAsaDecimals] = useState(0) // for decimal-aware rate display
+
+  // ASA creation form
+  const [createAsaForm, setCreateAsaForm] = useState({ name: '', unitName: '', total: '', decimals: '0' })
+  const [creatingAsa, setCreatingAsa]     = useState(false)
+  const [createdAsaId, setCreatedAsaId]   = useState(null)
+
+  // Milestone completion
+  const [completingMilestone, setCompletingMilestone] = useState(null)
 
   const loadProjects = useCallback(async () => {
     if (!activeAddress) { setLoading(false); return }
@@ -92,22 +102,65 @@ export default function MyProjects() {
 
   async function fetchAsaInfo(rawId) {
     const id = parseInt(rawId)
-    if (!id || id <= 0) { setAsaInfo(null); setAsaError(null); return }
+    if (!id || id <= 0) { setAsaInfo(null); setAsaError(null); setAsaDecimals(0); return }
     setAsaFetching(true)
     setAsaError(null)
     setAsaInfo(null)
+    setAsaDecimals(0)
     try {
       const asset = await algodClient.getAssetByID(id).do()
       const p = asset.asset?.params ?? asset.params ?? asset
+      const decimals = Number(p.decimals ?? 0)
+      setAsaDecimals(decimals)
       setAsaInfo({
         symbol: p['unit-name'] ?? p.unitName ?? '',
         name:   p.name ?? '',
+        decimals,
       })
     } catch {
       setAsaError(`ASA ${id} not found on-chain`)
     } finally {
       setAsaFetching(false)
     }
+  }
+
+  async function handleCreateAsa() {
+    if (!activeAddress) return
+    const { name, unitName, total, decimals } = createAsaForm
+    if (!name || !unitName || !total) return addToast('Fill in all token fields', 'error')
+    setCreatingAsa(true)
+    try {
+      const { buildAsaCreateTxn } = await import('../utils/transactions')
+      const txn = await buildAsaCreateTxn({
+        sender: activeAddress,
+        assetName: name,
+        unitName,
+        total: Math.round(Number(total) * Math.pow(10, Number(decimals))),
+        decimals: Number(decimals),
+      })
+      const result = await signAndSend(signTransactions, [txn.toByte()])
+      const asaId = Number(result['asset-index'] ?? result.assetIndex ?? 0)
+      setCreatedAsaId(asaId)
+      // Switch to existing tab and pre-fill the ASA ID
+      setSetupTab('existing')
+      setSetupForm(f => ({ ...f, asaId: String(asaId) }))
+      await fetchAsaInfo(String(asaId))
+      addToast(`Token created! ASA ID: ${asaId}`, 'success')
+    } catch (e) {
+      addToast(e?.message || 'Token creation failed', 'error')
+    } finally { setCreatingAsa(false) }
+  }
+
+  async function handleMilestoneComplete(appId) {
+    setCompletingMilestone(appId)
+    try {
+      const { markMilestoneComplete } = await import('../utils/api')
+      await markMilestoneComplete({ address: activeAddress, appId })
+      addToast('Milestone marked as complete!', 'success')
+      loadProjects()
+    } catch (e) {
+      addToast(e?.message || 'Failed to mark milestone complete', 'error')
+    } finally { setCompletingMilestone(null) }
   }
 
   async function handleSetup() {
@@ -124,6 +177,12 @@ export default function MyProjects() {
     try {
       const appAddress = algosdk.getApplicationAddress(appId)
       const goalMicroAlgos = algoToMicro(goalAlgo)
+
+      // Decimal-aware rate: the contract stores base units per microAlgo
+      // The UI rate is display tokens per ALGO, so multiply by 10^decimals
+      const decimals = asaInfo.decimals ?? 0
+      const baseUnitsPerAlgo = Math.round(ratePerAlgo * Math.pow(10, decimals))
+
       addToast('Step 1/2: Funding app account for minimum balance…', 'info', 3000)
       const sp = await algodClient.getTransactionParams().do()
       const fundTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
@@ -140,20 +199,17 @@ export default function MyProjects() {
         addToast('Step 1/2: Already opted in — skipping…', 'info', 2000)
       }
       addToast('Step 2/2: Sending setup (ASA opt-in + token pool)…', 'info', 3000)
-      const txns = await buildSetupGroup({ sender: activeAddress, appId, asaId, goalMicroAlgos, rateAsaPerAlgo: ratePerAlgo, appAddress })
+      const txns = await buildSetupGroup({ sender: activeAddress, appId, asaId, goalMicroAlgos, rateAsaPerAlgo: baseUnitsPerAlgo, appAddress })
       const encoded = encodeUnsignedTxns(txns)
       await signAndSend(signTransactions, encoded)
-      // Update token_name in Supabase from on-chain ASA unit name (backend verifies against algod)
       if (asaInfo.symbol) {
         try {
           const { updateProjectMeta } = await import('../utils/api')
           await updateProjectMeta({ address: activeAddress, appId, meta: { tokenName: asaInfo.symbol, asaId } })
-        } catch { /* non-critical — token symbol display only */ }
+        } catch { /* non-critical */ }
       }
       addToast('Contract set up! Refreshing…', 'success')
       setSetupModal(null)
-      // Wait 2 seconds for the backend syncSingleProject to complete before
-      // reloading — otherwise the cache still shows asa_id=0 (needs-setup)
       await new Promise(r => setTimeout(r, 2000))
       loadProjects()
     } catch (e) {
@@ -275,10 +331,22 @@ export default function MyProjects() {
                 </div>
 
                 <div className="mp-actions">
-                  {needsSetup
+                  {needsSetup && !p.meta?.is_donation
                     ? <button className="btn btn-primary btn-sm" onClick={() => openSetup(p)}>Set up contract</button>
+                    : needsSetup && p.meta?.is_donation
+                    ? <span className="faint" style={{ fontSize: 12 }}>Donation — no setup needed</span>
                     : <Link to={`/project/${p.id}`} className="btn btn-ghost btn-sm">View campaign</Link>
                   }
+                  {p.meta?.milestone_title && !p.meta?.milestone_completed_at && (status === 'distributed' || status === 'funded') && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: 12, color: 'var(--success)' }}
+                      disabled={completingMilestone === p.id}
+                      onClick={() => handleMilestoneComplete(p.id)}
+                    >
+                      {completingMilestone === p.id ? 'Marking…' : '✓ Mark milestone complete'}
+                    </button>
+                  )}
                 </div>
               </div>
             )
@@ -293,72 +361,146 @@ export default function MyProjects() {
             <h2>Set up contract</h2>
             <p className="faint" style={{ fontSize: 14, marginTop: 4 }}>App #{setupModal.appId}</p>
 
-            <div className="setup-modal-fields">
-              <div className="field">
-                <label>ASA / Token ID *</label>
-                <input
-                  className="input"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="e.g. 123456789"
-                  value={setupForm.asaId}
-                  onChange={e => {
-                    const v = e.target.value.replace(/[^0-9]/g, '')
-                    setSetupForm(f => ({ ...f, asaId: v }))
-                    setAsaInfo(null)
-                    setAsaError(null)
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 20, marginTop: 16 }}>
+              {[
+                { k: 'existing', l: 'I have a token' },
+                { k: 'create',   l: 'Create new token' },
+              ].map(({ k, l }) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setSetupTab(k)}
+                  style={{
+                    padding: '8px 16px', fontSize: 13, fontWeight: setupTab === k ? 600 : 400,
+                    borderBottom: setupTab === k ? '2px solid var(--accent)' : '2px solid transparent',
+                    color: setupTab === k ? 'var(--accent)' : 'var(--text-muted)',
+                    background: 'none', border: 'none', cursor: 'pointer',
                   }}
-                  onBlur={e => fetchAsaInfo(e.target.value)}
-                />
-                {asaFetching && (
-                  <span className="field-hint">Looking up ASA…</span>
-                )}
-                {asaInfo && (
-                  <span className="field-hint" style={{ color: 'var(--success)' }}>
-                    ✓ {asaInfo.name}{asaInfo.symbol ? ` (${asaInfo.symbol})` : ''} found on-chain
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {setupTab === 'existing' && (
+              <div className="setup-modal-fields">
+                <div className="field">
+                  <label>ASA / Token ID *</label>
+                  <input
+                    className="input"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 123456789"
+                    value={setupForm.asaId}
+                    onChange={e => {
+                      const v = e.target.value.replace(/[^0-9]/g, '')
+                      setSetupForm(f => ({ ...f, asaId: v }))
+                      setAsaInfo(null)
+                      setAsaError(null)
+                    }}
+                    onBlur={e => fetchAsaInfo(e.target.value)}
+                  />
+                  {asaFetching && <span className="field-hint">Looking up ASA…</span>}
+                  {asaInfo && (
+                    <span className="field-hint" style={{ color: 'var(--success)' }}>
+                      ✓ {asaInfo.name}{asaInfo.symbol ? ` (${asaInfo.symbol})` : ''}
+                      {asaInfo.decimals > 0 ? ` · ${asaInfo.decimals} decimals` : ''} found on-chain
+                    </span>
+                  )}
+                  {asaError && <span className="field-hint" style={{ color: 'var(--danger)' }}>{asaError}</span>}
+                  {!asaFetching && !asaInfo && !asaError && (
+                    <span className="field-hint">The Algorand Standard Asset ID for your project token.</span>
+                  )}
+                  {createdAsaId && (
+                    <span className="field-hint" style={{ color: 'var(--accent)' }}>
+                      ← Pre-filled from newly created token (ASA {createdAsaId})
+                    </span>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label>Funding Goal (ALGO)</label>
+                  <div className="readonly-field">{setupForm.goalAlgo || '—'} ALGO</div>
+                  <span className="field-hint">Set at project creation — cannot be changed.</span>
+                </div>
+
+                <div className="field">
+                  <label>Token Rate (display tokens per ALGO)</label>
+                  <div className="readonly-field">{setupForm.ratePerAlgo || '—'}</div>
+                  <span className="field-hint">
+                    Set at project creation — cannot be changed.
+                    {asaInfo?.decimals > 0
+                      ? ` With ${asaInfo.decimals} decimals, ${setupForm.ratePerAlgo} display token${setupForm.ratePerAlgo !== '1' ? 's' : ''}/ALGO = ${Math.round(Number(setupForm.ratePerAlgo) * Math.pow(10, asaInfo.decimals)).toLocaleString()} base units/ALGO stored on-chain.`
+                      : ''}
                   </span>
-                )}
-                {asaError && (
-                  <span className="field-hint" style={{ color: 'var(--danger)' }}>{asaError}</span>
-                )}
-                {!asaFetching && !asaInfo && !asaError && (
-                  <span className="field-hint">The Algorand Standard Asset ID for your project token.</span>
-                )}
-              </div>
+                </div>
 
-              <div className="field">
-                <label>Funding Goal (ALGO)</label>
-                <div className="readonly-field">{setupForm.goalAlgo || '—'} ALGO</div>
-                <span className="field-hint">Set at project creation — cannot be changed.</span>
-              </div>
-
-              <div className="field">
-                <label>Token Rate (base units per ALGO)</label>
-                <div className="readonly-field">{setupForm.ratePerAlgo || '—'}</div>
-                <span className="field-hint">Set at project creation — cannot be changed.</span>
-              </div>
-
-              {setupForm.goalAlgo && setupForm.ratePerAlgo && (
-                <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', padding: 14, fontSize: 13, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Tokens to provide:</span>
-                    <span className="mono" style={{ color: 'var(--text)' }}>{Math.floor((+setupForm.goalAlgo || 0) * (+setupForm.ratePerAlgo || 0)).toLocaleString()}</span>
+                {setupForm.goalAlgo && setupForm.ratePerAlgo && (
+                  <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', padding: 14, fontSize: 13, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Tokens to provide:</span>
+                      <span className="mono" style={{ color: 'var(--text)' }}>
+                        {Math.floor((+setupForm.goalAlgo || 0) * (+setupForm.ratePerAlgo || 0) * Math.pow(10, asaDecimals)).toLocaleString()}
+                        {asaInfo?.symbol ? ` ${asaInfo.symbol}` : ''} base units
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                      Success fee (4%) is deducted from your payout when you claim. Listing fee was paid at deployment.
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                      Note: 0.4 ALGO is sent to the contract account to cover Algorand minimum balance requirements.
+                    </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                    Success fee (4%) is deducted from your payout when you claim. Listing fee was paid at deployment.
+                )}
+              </div>
+            )}
+
+            {setupTab === 'create' && (
+              <div className="setup-modal-fields">
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                  Create a new Algorand Standard Asset for your project. You will sign one transaction to deploy the token, then proceed to setup.
+                </p>
+                <div className="field">
+                  <label>Token name *</label>
+                  <input className="input" placeholder="e.g. AlgoSwap Token" value={createAsaForm.name} onChange={e => setCreateAsaForm(f => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div className="field">
+                  <label>Ticker symbol *</label>
+                  <input className="input" placeholder="e.g. ASWAP" value={createAsaForm.unitName} onChange={e => setCreateAsaForm(f => ({ ...f, unitName: e.target.value.toUpperCase().slice(0, 8) }))} />
+                  <span className="field-hint">Up to 8 characters, uppercase.</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div className="field">
+                    <label>Total supply *</label>
+                    <input className="input" type="text" inputMode="numeric" placeholder="e.g. 1000000" value={createAsaForm.total} onChange={e => setCreateAsaForm(f => ({ ...f, total: e.target.value.replace(/[^0-9]/g, '') }))} />
+                    <span className="field-hint">Display units.</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                    Note: 0.4 ALGO is sent to the contract account to cover Algorand minimum balance requirements.
+                  <div className="field">
+                    <label>Decimals</label>
+                    <select className="input" value={createAsaForm.decimals} onChange={e => setCreateAsaForm(f => ({ ...f, decimals: e.target.value }))}>
+                      {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
                   </div>
                 </div>
-              )}
-            </div>
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginTop: 8 }}
+                  disabled={creatingAsa || !createAsaForm.name || !createAsaForm.unitName || !createAsaForm.total}
+                  onClick={handleCreateAsa}
+                >
+                  {creatingAsa ? 'Creating token…' : 'Create token & continue to setup'}
+                </button>
+              </div>
+            )}
 
             <div className="setup-modal-actions">
               <button className="btn btn-ghost" onClick={() => setSetupModal(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSetup} disabled={settingUp}>
-                {settingUp ? 'Processing…' : 'Set up contract'}
-              </button>
+              {setupTab === 'existing' && (
+                <button className="btn btn-primary" onClick={handleSetup} disabled={settingUp}>
+                  {settingUp ? 'Processing…' : 'Set up contract'}
+                </button>
+              )}
             </div>
           </div>
         </div>

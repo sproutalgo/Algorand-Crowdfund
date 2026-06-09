@@ -6,7 +6,7 @@ import {
   algodClient, fetchAppInfo, fetchLocalState,
   shortAddress, signAndSend, ADMIN_ADDRESS,
 } from '../utils/algorand'
-import { fetchProjectMeta, updateStatus } from '../utils/api'
+import { fetchProjectMeta, updateStatus, fetchSeries } from '../utils/api'
 import {
   buildOptInTxn, buildAsaOptInTxn, buildContributeGroup,
   buildFinalizeTxn, buildCreatorClaimTxn, buildRefundTxn,
@@ -17,6 +17,110 @@ import {
   Cover, StatusBadge, Progress, IdTag, Icon,
   fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue, shortAddr,
 } from '../components/UI'
+
+function SeriesTimeline({ seriesId, currentAppId, meta }) {
+  const [series, setSeries] = React.useState([])
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    if (!seriesId) return
+    fetchSeries(seriesId)
+      .then(data => setSeries(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [seriesId])
+
+  // Include planned milestones from current meta
+  const planned = meta.planned_milestones || []
+  const nextNum = series.length + 1
+
+  if (loading || (series.length === 0 && planned.length === 0)) return null
+
+  return (
+    <div className="detail-section" style={{ marginTop: 24 }}>
+      <h3>Campaign series</h3>
+      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+        This campaign is part of a multi-milestone series. Completed milestones are verified on-chain.
+        <br />
+        <em>Note: Milestones are creator commitments and are not enforced on-chain. Sprout does not verify milestone completion.</em>
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {series.map((m, i) => {
+          const isCurrent  = Number(m.app_id) === Number(currentAppId)
+          const isComplete = !!m.milestone_completed_at
+          const isFunded   = m.is_funded || m.is_distributed || Number(m.on_chain_funded_round) > 0
+          return (
+            <div key={m.app_id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0,
+                  background: isComplete ? 'var(--success)' : isCurrent ? 'var(--accent)' : 'var(--surface-2)',
+                  color: isComplete || isCurrent ? 'white' : 'var(--text-muted)',
+                  border: isCurrent ? '2px solid var(--accent)' : 'none',
+                }}>
+                  {isComplete ? '✓' : (m.milestone_number || i + 1)}
+                </div>
+                {i < series.length - 1 || planned.length > 0 ? (
+                  <div style={{ width: 2, flex: 1, minHeight: 20, background: 'var(--border)', margin: '4px 0' }} />
+                ) : null}
+              </div>
+              <div style={{ flex: 1, paddingBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>
+                    {isCurrent ? (
+                      <span style={{ color: 'var(--accent)' }}>{m.milestone_title || m.name} ← This campaign</span>
+                    ) : (
+                      <a href={`/project/${m.app_id}`} style={{ color: 'var(--text)', textDecoration: 'underline' }}>
+                        {m.milestone_title || m.name}
+                      </a>
+                    )}
+                  </span>
+                  {isComplete && <span style={{ fontSize: 11, padding: '2px 7px', background: 'var(--success-soft)', color: 'var(--success)', borderRadius: 4 }}>Completed</span>}
+                  {!isComplete && isFunded && <span style={{ fontSize: 11, padding: '2px 7px', background: 'var(--accent-soft)', color: 'var(--accent)', borderRadius: 4 }}>Funded</span>}
+                  {!isComplete && !isFunded && !isCurrent && <span style={{ fontSize: 11, padding: '2px 7px', background: 'var(--surface-2)', color: 'var(--text-muted)', borderRadius: 4 }}>In progress</span>}
+                </div>
+                {m.milestone_description && (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{m.milestone_description}</p>
+                )}
+                {m.goal_micro && (
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    Goal: {(Number(m.goal_micro) / 1_000_000).toLocaleString()} ALGO
+                    {Number(m.on_chain_raised) > 0 ? ` · Raised: ${(Number(m.on_chain_raised) / 1_000_000).toLocaleString()} ALGO` : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+        {/* Planned future milestones */}
+        {planned.map((m, i) => (
+          <div key={`planned-${i}`} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', opacity: 0.5 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0,
+                background: 'var(--surface-2)', color: 'var(--text-muted)',
+                border: '1.5px dashed var(--border)',
+              }}>
+                {nextNum + i}
+              </div>
+              {i < planned.length - 1 && (
+                <div style={{ width: 2, flex: 1, minHeight: 20, background: 'var(--border)', margin: '4px 0', opacity: 0.4 }} />
+              )}
+            </div>
+            <div style={{ flex: 1, paddingBottom: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-muted)' }}>
+                {m.title} <span style={{ fontSize: 11, padding: '2px 7px', background: 'var(--surface-2)', color: 'var(--text-muted)', borderRadius: 4 }}>Upcoming</span>
+              </div>
+              {m.description && (
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{m.description}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function ProjectDetail() {
   const { appId: appIdStr } = useParams()
@@ -323,6 +427,18 @@ export default function ProjectDetail() {
               <h3>About this project</h3>
               <p className="detail-body">{meta.description}</p>
             </div>
+          )}
+
+          {/* Donation campaign badge */}
+          {meta.is_donation && (
+            <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text)' }}>Donation campaign</strong> — Backers contribute ALGO to support this project. No tokens are distributed.
+            </div>
+          )}
+
+          {/* Series / milestone timeline */}
+          {(meta.series_id || meta.milestone_title) && (
+            <SeriesTimeline seriesId={meta.series_id || String(appId)} currentAppId={appId} meta={meta} />
           )}
 
           {meta.website_url && (

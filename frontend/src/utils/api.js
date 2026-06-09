@@ -83,7 +83,23 @@ export async function registerProject({ address, appId, meta }) {
   return apiFetch('/projects', {
     method: 'POST',
     headers: { 'x-algo-address': address },
-    body: { appId, ...meta },
+    body: {
+      appId,
+      name:                 meta.name,
+      tagline:              meta.tagline,
+      description:          meta.description,
+      category:             meta.category,
+      websiteUrl:           meta.websiteUrl,
+      tokenName:            meta.tokenName,
+      goalMicro:            meta.goalMicro,
+      ratePerAlgo:          meta.ratePerAlgo,
+      isDonation:           meta.isDonation,
+      seriesId:             meta.seriesId,
+      milestoneNumber:      meta.milestoneNumber,
+      milestoneTitle:       meta.milestoneTitle,
+      milestoneDescription: meta.milestoneDescription,
+      plannedMilestones:    meta.plannedMilestones,
+    },
   })
 }
 
@@ -144,4 +160,28 @@ export async function purgeProject({ address, appId, signTransactions }) {
   return authFetch(`/projects/${appId}`, {
     method: 'DELETE',
   }, signTransactions, address)
+}
+
+export async function fetchSeries(seriesId) {
+  return apiFetch(`/projects/series/${seriesId}`)
+}
+
+export async function fetchCreatorSeries(creatorAddress) {
+  // Fetch creator's projects that belong to a series
+  const projects = await fetchCreatorProjectsMeta(creatorAddress)
+  const series = {}
+  for (const p of projects) {
+    if (p.series_id) {
+      if (!series[p.series_id]) series[p.series_id] = []
+      series[p.series_id].push(p)
+    }
+  }
+  return series
+}
+
+export async function markMilestoneComplete({ address, appId }) {
+  return apiFetch(`/projects/${appId}/milestone-complete`, {
+    method: 'PATCH',
+    headers: { 'x-algo-address': address },
+  })
 }

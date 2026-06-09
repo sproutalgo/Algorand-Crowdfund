@@ -114,8 +114,13 @@ export async function createProject({
   tokenName,
   goalMicro,
   ratePerAlgo,
+  isDonation,
+  seriesId,
+  milestoneNumber,
+  milestoneTitle,
+  milestoneDescription,
+  plannedMilestones,
 }) {
-  // Length validation
   if (!name || String(name).trim().length === 0) throw new Error('name is required')
   if (String(name).length > 60)          throw new Error('name exceeds 60 characters')
   if (String(tagline || '').length > 120) throw new Error('tagline exceeds 120 characters')
@@ -127,18 +132,24 @@ export async function createProject({
   const { data, error } = await supabase
     .from('projects')
     .insert({
-      app_id:          Number(appId),
-      creator_address: creatorAddress,
-      name:            String(name).slice(0, 60),
-      tagline:         String(tagline    || '').slice(0, 120),
-      description:     String(description || '').slice(0, 2000),
-      category:        category   || 'Other',
-      website_url:     String(websiteUrl || '').slice(0, 200),
-      deck_url:        deckUrl    || '',
-      image_url:       imageUrl   || '',
-      token_name:      tokenName  || '',
-      goal_micro:      Number(goalMicro),
-      rate_per_algo:   Number(ratePerAlgo),
+      app_id:               Number(appId),
+      creator_address:      creatorAddress,
+      name:                 String(name).slice(0, 60),
+      tagline:              String(tagline    || '').slice(0, 120),
+      description:          String(description || '').slice(0, 2000),
+      category:             category   || 'Other',
+      website_url:          String(websiteUrl || '').slice(0, 200),
+      deck_url:             deckUrl    || '',
+      image_url:            imageUrl   || '',
+      token_name:           tokenName  || '',
+      goal_micro:           Number(goalMicro),
+      rate_per_algo:        Number(ratePerAlgo),
+      is_donation:          Boolean(isDonation),
+      series_id:            seriesId || null,
+      milestone_number:     milestoneNumber ? Number(milestoneNumber) : null,
+      milestone_title:      milestoneTitle || null,
+      milestone_description: milestoneDescription || null,
+      planned_milestones:   plannedMilestones || null,
     })
     .select()
     .single()

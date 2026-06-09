@@ -322,6 +322,30 @@ export async function buildClearStateTxn({ sender, appId }) {
 }
 
 /**
+ * Create a new Algorand Standard Asset (ASA).
+ * Used by the "Create token" tab in the setup modal.
+ */
+export async function buildAsaCreateTxn({
+  sender, assetName, unitName, total, decimals,
+}) {
+  const sp = await getSp()
+  return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+    sender,
+    suggestedParams: { ...sp, flatFee: true, fee: 1000 },
+    defaultFrozen: false,
+    unitName:      String(unitName).slice(0, 8).toUpperCase(),
+    assetName:     String(assetName).slice(0, 32),
+    total:         BigInt(total),
+    decimals:      Number(decimals),
+    assetURL:      '',
+    manager:       sender,
+    reserve:       sender,
+    freeze:        undefined,
+    clawback:      undefined,
+  })
+}
+
+/**
  * Delete the application (admin only, when admin_claimed == 1).
  */
 export async function buildDeleteAppTxn({ sender, appId }) {

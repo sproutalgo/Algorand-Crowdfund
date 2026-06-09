@@ -106,9 +106,18 @@ def approval_program():
     # ── on_create ───────────────────────────────────────────────────────────────
     # Args: [0]=admin(32 bytes), [1]=goal(microAlgos), [2]=rate, [3]=days(1-100)
     # Group: [0]=ApplicationCreate, [1]=Payment(listing_fee) from creator to admin
+    # rate == 0 signals a donation campaign (no token distribution).
+    # Donation campaigns have a minimum listing fee of 10 ALGO regardless of goal/days.
     days_arg         = Btoi(Txn.application_args[3])
     goal_arg         = Btoi(Txn.application_args[1])
+    rate_arg         = Btoi(Txn.application_args[2])
     listing_fee      = (goal_arg * days_arg) / Int(10_000)
+    # Donation campaigns: minimum listing fee is 10 ALGO (10_000_000 microAlgos)
+    MIN_LISTING_FEE  = Int(10_000_000)
+    effective_listing_fee = If(rate_arg == Int(0),
+        If(listing_fee < MIN_LISTING_FEE, MIN_LISTING_FEE, listing_fee),
+        listing_fee
+    )
     deadline_rounds  = Global.round() + (days_arg * ROUNDS_PER_DAY)
     admin_arg        = Txn.application_args[0]
 
@@ -117,17 +126,9 @@ def approval_program():
         Assert(Len(admin_arg) == Int(32)),
         Assert(goal_arg > Int(0)),
         Assert(goal_arg % Int(1_000_000) == Int(0)),
-        # Minimum goal of 10 ALGO. The success fee is taken as the REMAINDER
-        # swept to the admin at close (close_remainder_to), not a fixed amount.
-        # creator_claim, however, pays a FIXED goal*96% while the app is still
-        # alive and must keep its ~0.2 ALGO min balance locked. That payment
-        # succeeds only when the 4% residual (goal*0.04) exceeds the app's min
-        # balance, i.e. goal >= 5 ALGO. We require 10 ALGO for a safe cushion.
-        # NOTE: revisit this floor if the app ever holds more than one ASA or
-        # adopts boxes — both raise the app-account min balance.
         Assert(goal_arg >= Int(10_000_000)),
         Assert(goal_arg <= MAX_GOAL),
-        Assert(Btoi(Txn.application_args[2]) > Int(0)),
+        # rate == 0 is allowed for donation campaigns; rate > 0 for token campaigns
         Assert(days_arg >= MIN_DAYS),
         Assert(days_arg <= MAX_DAYS),
         # Listing fee payment: grouped Payment from creator to admin
@@ -136,13 +137,13 @@ def approval_program():
         Assert(Gtxn[1].type_enum() == TxnType.Payment),
         Assert(Gtxn[1].sender() == Txn.sender()),
         Assert(Gtxn[1].receiver() == admin_arg),
-        Assert(Gtxn[1].amount() >= listing_fee),
+        Assert(Gtxn[1].amount() >= effective_listing_fee),
         Assert(Gtxn[1].close_remainder_to() == Global.zero_address()),
         Assert(Gtxn[1].rekey_to() == Global.zero_address()),
         App.globalPut(KEY_CREATOR,         Txn.sender()),
         App.globalPut(KEY_ADMIN,           admin_arg),
         App.globalPut(KEY_GOAL,            goal_arg),
-        App.globalPut(KEY_RATE,            Btoi(Txn.application_args[2])),
+        App.globalPut(KEY_RATE,            rate_arg),
         App.globalPut(KEY_DAYS,            days_arg),
         App.globalPut(KEY_DEADLINE,        deadline_rounds),
         App.globalPut(KEY_RAISED,          Int(0)),
@@ -234,13 +235,15 @@ def approval_program():
     # raised moves UP by the contribution and is never decremented; it is the
     # monotonic record of progress toward goal. Per-investor `contrib` local
     # state records the individual stake (settled to zero on finalize/refund).
+    # Donation campaigns (rate==0): no asa_id required, no token distribution.
     investor   = Txn.sender()
     new_raised = ScratchVar(TealType.uint64)
     contribute = Seq(
         Assert(before_deadline),
         Assert(Not(is_cancelled)),
         Assert(raised < goal),
-        Assert(asa_id != Int(0)),
+        # Token campaigns require setup (asa_id != 0); donation campaigns skip setup
+        If(rate != Int(0)).Then(Assert(asa_id != Int(0))),
         Assert(Txn.group_index() == Int(0)),
         Assert(Global.group_size() == Int(2)),
         Assert(Gtxn[1].type_enum() == TxnType.Payment),
@@ -263,12 +266,7 @@ def approval_program():
 
     # ── finalize ────────────────────────────────────────────────────────────────
     # Success only. Investor claims tokens; their local contrib is zeroed.
-    # Must be a lone transaction: the caller's fee must cover the inner ASA
-    # transfer (fee:0 → caller-pooled). Pinning group_size==1 blocks any
-    # group-context manipulation of the pooled fee budget.
-    # FRONTEND REQUIREMENT: the investor must be opted into asa_id before
-    # calling finalize, or the inner AssetTransfer fails and the call reverts
-    # (funds are not lost — the investor can opt in and retry).
+    # Donation campaigns (rate==0): no tokens distributed, contrib zeroed immediately.
     contrib_amt = ScratchVar(TealType.uint64)
     tokens_due  = ScratchVar(TealType.uint64)
     finalize = Seq(
@@ -277,20 +275,21 @@ def approval_program():
         Assert(Not(is_cancelled)),
         contrib_amt.store(App.localGet(investor, LKEY_CONTRIB)),
         Assert(contrib_amt.load() > Int(0)),
-        # tokens_due is exact (no truncation) ONLY because contribute enforces
-        # whole-ALGO contributions (amount % 1_000_000 == 0). Do NOT relax that
-        # modulus check, or investors could pay ALGO for zero tokens here.
-        tokens_due.store((contrib_amt.load() * rate) / Int(1_000_000)),
-        If(tokens_due.load() > Int(0)).Then(Seq(
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields({
-                TxnField.type_enum:      TxnType.AssetTransfer,
-                TxnField.xfer_asset:     asa_id,
-                TxnField.asset_receiver: investor,
-                TxnField.asset_amount:   tokens_due.load(),
-                TxnField.fee:            Int(0),
-            }),
-            InnerTxnBuilder.Submit(),
+        # Token campaigns: distribute tokens proportional to contribution
+        # Donation campaigns (rate==0): skip token distribution
+        If(rate != Int(0)).Then(Seq(
+            tokens_due.store((contrib_amt.load() * rate) / Int(1_000_000)),
+            If(tokens_due.load() > Int(0)).Then(Seq(
+                InnerTxnBuilder.Begin(),
+                InnerTxnBuilder.SetFields({
+                    TxnField.type_enum:      TxnType.AssetTransfer,
+                    TxnField.xfer_asset:     asa_id,
+                    TxnField.asset_receiver: investor,
+                    TxnField.asset_amount:   tokens_due.load(),
+                    TxnField.fee:            Int(0),
+                }),
+                InnerTxnBuilder.Submit(),
+            )),
         )),
         App.localPut(investor, LKEY_CONTRIB, Int(0)),
         Approve()
