@@ -51,6 +51,7 @@ export default function Home() {
 
       for (const meta of metaList) {
         const id = Number(meta.app_id)
+        // Skip deleted contracts entirely — no algod call needed
         if (meta.on_chain_deleted) {
           cachedMap[id] = { gs: {}, deleted: true }
           continue
@@ -89,6 +90,19 @@ export default function Home() {
   useEffect(() => {
     loadPage(page, filter, search)
   }, [page, loadPage])
+
+  // Reload when the tab becomes visible again — catches the case where
+  // a creator deployed a contract then navigated back to explore.
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') {
+        setPage(1)
+        loadPage(1, filter, search)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [filter, search, loadPage])
 
   // Scroll to top on page navigation so new results start at the top
   useEffect(() => {
@@ -140,7 +154,7 @@ export default function Home() {
     if (m.is_hidden)   return false
     if (isCancelled && filter !== 'All' && filter !== 'Cancelled') return false
     if (!isCancelled && filter === 'Cancelled') return false
-    if (!isCancelled && !p.gs?.asa_id && status !== 'distributed') return false
+    if (!isCancelled && !p.gs?.asa_id && !m.is_donation && status !== 'distributed') return false
     const cat = m.category || 'Other'
     if (filter !== 'All' && filter !== 'Cancelled' && cat !== filter) return false
     if (search) {
