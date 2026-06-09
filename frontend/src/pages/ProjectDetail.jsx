@@ -513,8 +513,8 @@ export default function ProjectDetail() {
                   </p>
                 )}
 
-                {/* Investor claim */}
-                {canClaim && (
+                {/* Investor claim — hidden for donation campaigns (nothing to claim) */}
+                {canClaim && !meta.is_donation && (
                   <button
                     className="btn btn-primary btn-block"
                     style={{ marginTop: 12 }}
@@ -523,6 +523,11 @@ export default function ProjectDetail() {
                   >
                     {actioning ? 'Processing…' : `Claim ${formatTokens(Math.floor((myContrib * rate) / 1_000_000))}`}
                   </button>
+                )}
+                {canClaim && meta.is_donation && (
+                  <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
+                    Thank you for backing this campaign. Donation campaigns do not distribute tokens.
+                  </div>
                 )}
 
               </div>
