@@ -253,6 +253,45 @@ export default function CreateProject() {
                   )}
                 </div>
 
+                {/* Continue existing series — shown at top for quick pre-fill */}
+                {creatorProjects.filter(p => p.milestone_title).length > 0 && (
+                  <div className="field" style={{ marginBottom: 8 }}>
+                    <label>Continue existing series (optional)</label>
+                    <select className="input" value={selectedSeriesAppId} onChange={e => {
+                      const val = e.target.value
+                      setSelectedSeriesAppId(val)
+                      if (val) {
+                        const parent = creatorProjects.find(p => String(p.app_id) === val)
+                        if (parent) {
+                          setForm(f => ({
+                            ...f,
+                            name:        parent.name        || f.name,
+                            tagline:     parent.tagline     || f.tagline,
+                            description: parent.description || f.description,
+                            category:    parent.category    || f.category,
+                            websiteUrl:  parent.website_url || f.websiteUrl,
+                          }))
+                        }
+                      }
+                    }}>
+                      <option value="">— Start a new series —</option>
+                      {creatorProjects
+                        .filter(p => p.milestone_title)
+                        .map(p => (
+                          <option key={p.app_id} value={String(p.app_id)}>
+                            {p.name} (App #{p.app_id})
+                          </option>
+                        ))
+                      }
+                    </select>
+                    {selectedSeriesAppId && (
+                      <span className="field-hint" style={{ color: 'var(--success)' }}>
+                        ✓ Project info pre-filled from selected campaign. Edit as needed.
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="form-grid">
                   <div className="field span-2">
                     <label>Project name *</label>
@@ -306,26 +345,9 @@ export default function CreateProject() {
                     Link this campaign to a series of milestones. Investors will see your track record across all campaigns in the series.
                   </p>
 
-                  {creatorProjects.filter(p => p.series_id || p.milestone_title).length > 0 && (
-                    <div className="field" style={{ marginBottom: 12 }}>
-                      <label>Continue existing series</label>
-                      <select className="input" value={selectedSeriesAppId} onChange={e => setSelectedSeriesAppId(e.target.value)}>
-                        <option value="">— Start a new series —</option>
-                        {creatorProjects
-                          .filter(p => p.milestone_title)
-                          .map(p => (
-                            <option key={p.app_id} value={String(p.app_id)}>
-                              {p.name} (App #{p.app_id})
-                            </option>
-                          ))
-                        }
-                      </select>
-                    </div>
-                  )}
-
                   <div className="field" style={{ marginBottom: 12 }}>
                     <label>This milestone</label>
-                    <input className="input" placeholder="e.g. Milestone 1 — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
+                    <input className="input" placeholder="e.g. This Milestone — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
                   </div>
                   <div className="field" style={{ marginBottom: 12 }}>
                     <label>Milestone description</label>
