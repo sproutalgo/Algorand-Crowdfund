@@ -12,6 +12,7 @@ export default function Home() {
   const [projects, setProjects]     = useState([])
   const [loading, setLoading]       = useState(true)
   const [filter, setFilter]         = useState('All')
+  const [showDonations, setShowDonations] = useState(true)
   const [search, setSearch]         = useState('')
   const [error, setError]           = useState(null)
   const [page, setPage]             = useState(1)
@@ -155,6 +156,7 @@ export default function Home() {
     if (isCancelled && filter !== 'All' && filter !== 'Cancelled') return false
     if (!isCancelled && filter === 'Cancelled') return false
     if (!isCancelled && !p.gs?.asa_id && !m.is_donation && status !== 'distributed') return false
+    if (m.is_donation && !showDonations) return false
     const cat = m.category || 'Other'
     if (filter !== 'All' && filter !== 'Cancelled' && cat !== filter) return false
     if (search) {
@@ -257,6 +259,13 @@ export default function Home() {
           {FILTERS.map(f => (
             <button key={f} className={`chip${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>{f}</button>
           ))}
+          <button
+            className={`chip${showDonations ? ' active' : ''}`}
+            onClick={() => setShowDonations(s => !s)}
+            style={{ marginLeft: 'auto', opacity: showDonations ? 1 : 0.6 }}
+          >
+            {showDonations ? '♥ Donations' : '♥ Donations'}
+          </button>
         </div>
 
         <div style={{
