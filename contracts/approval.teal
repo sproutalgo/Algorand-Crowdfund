@@ -120,7 +120,7 @@ int 0
 global Round
 byte "funded_round"
 app_global_get
-int 4712727
+int 10
 +
 >
 &&
@@ -147,7 +147,7 @@ app_global_get
 global Round
 byte "deadline"
 app_global_get
-int 4712727
+int 10
 +
 >
 &&
@@ -175,7 +175,7 @@ int 0
 global Round
 byte "funded_round"
 app_global_get
-int 4712727
+int 10
 +
 >
 &&
@@ -253,7 +253,7 @@ int 0
 global Round
 byte "funded_round"
 app_global_get
-int 4712727
+int 10
 +
 >
 &&
@@ -275,7 +275,7 @@ app_global_get
 global Round
 byte "deadline"
 app_global_get
-int 4712727
+int 10
 +
 >
 &&
@@ -872,7 +872,7 @@ byte "deadline"
 global Round
 txna ApplicationArgs 3
 btoi
-int 26057
+int 10
 *
 +
 app_global_put
