@@ -149,11 +149,13 @@ export default function CleanupWallet() {
   useEffect(() => { loadEntries() }, [loadEntries])
 
   async function handleClearApp(appId, contrib, force = false) {
+    const meta = appEntries.find(e => e.appId === appId)?.meta
+    const isDonationFunded = meta?.is_donation && (meta?.is_funded || meta?.is_distributed)
     if (contrib > 0 && !force) {
       addToast('Use "Force clear" to opt out and forfeit your pending contribution.', 'error', 6000)
       return
     }
-    if (contrib > 0 && force) {
+    if (contrib > 0 && force && !isDonationFunded) {
       const confirmed = window.confirm(
         `⚠️ You have ${(contrib / 1_000_000).toFixed(6)} ALGO pending in app ${appId}.\n\nForce clearing will permanently forfeit this amount. It cannot be recovered.\n\nProceed?`
       )
