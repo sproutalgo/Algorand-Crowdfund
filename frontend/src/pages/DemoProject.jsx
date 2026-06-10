@@ -7,7 +7,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Cover, StatusBadge, Progress, Icon,
+  Cover, StatusBadge, Progress, Icon, Identicon,
   fmtAlgo, pctNum, categoryHue,
 } from '../components/UI'
 
@@ -62,8 +62,8 @@ export default function DemoProject() {
 
       {/* Demo banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #10643F22, #2FBE7322)',
-        border: '1px solid #2FBE7344',
+        background: 'var(--accent-soft)',
+        border: '1px solid var(--accent-line)',
         borderRadius: 'var(--r-md)',
         padding: '12px 20px',
         marginBottom: 24,
@@ -101,7 +101,7 @@ export default function DemoProject() {
           <p className="detail-tag">{DEMO.meta.tagline}</p>
 
           <div className="detail-creator">
-            <div className="creator-av" />
+            <Identicon seed={DEMO.creator} size={38} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 14.5 }}>SPROUT…DEMO</div>
               <div className="faint" style={{ fontSize: 13 }}>Verified creator</div>

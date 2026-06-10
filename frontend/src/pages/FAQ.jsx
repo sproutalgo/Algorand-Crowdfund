@@ -7,6 +7,10 @@ const SECTIONS = [
     heading: 'For Backers',
     items: [
       {
+        q: 'Where is my money held while a campaign runs?',
+        a: 'In the campaign\'s own smart contract on Algorand — non-custodial escrow. Neither Sprout nor the creator can touch contributions while a campaign is live. If the goal is met, the contract releases the funds to the creator (minus the 4% success fee) and your tokens to you. If the goal is missed, the contract releases nothing to the creator, and every backer can claim a full refund.',
+      },
+      {
         q: 'How do I back a project?',
         a: 'Connect your Algorand wallet, opt into the campaign, and send ALGO before the funding deadline. Your contribution is held in the project\'s smart contract — no intermediary holds your funds at any point.',
       },

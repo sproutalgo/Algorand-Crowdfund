@@ -14,7 +14,7 @@ import {
 } from '../utils/transactions'
 import { useToast } from '../context/ToastContext'
 import {
-  Cover, StatusBadge, Progress, IdTag, Icon,
+  Cover, StatusBadge, Progress, IdTag, Icon, Identicon,
   fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue, shortAddr,
 } from '../components/UI'
 
@@ -415,10 +415,10 @@ export default function ProjectDetail() {
           {meta.tagline && <p className="detail-tag">{meta.tagline}</p>}
 
           <div className="detail-creator">
-            <div className="creator-av" />
+            <Identicon seed={safeGs.creator} size={38} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 14.5 }}>{shortAddr(safeGs.creator)}</div>
-              <div className="faint" style={{ fontSize: 13 }}>Verified creator</div>
+              <div className="faint" style={{ fontSize: 13 }}>Campaign creator</div>
             </div>
           </div>
 
@@ -474,9 +474,11 @@ export default function ProjectDetail() {
           <div className="card fund-panel">
             {/* Progress */}
             <div>
-              <div className="fund-big">
+              <div className="fund-big" style={{ color: pct >= 85 && pct < 100 ? 'var(--warn)' : undefined }}>
                 {pct}<span style={{ fontSize: 22, color: 'var(--text-muted)' }}>%</span>
-                {' '}<span style={{ fontSize: 17, color: 'var(--text-muted)', fontWeight: 500 }}>funded</span>
+                {' '}<span style={{ fontSize: 17, color: 'var(--text-muted)', fontWeight: 500 }}>
+                  {pct >= 85 && pct < 100 ? 'grown — almost there' : 'grown'}
+                </span>
               </div>
               <div style={{ margin: '16px 0 8px' }}>
                 <Progress raised={raised} goal={goal} />

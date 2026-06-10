@@ -170,7 +170,7 @@ export default function CreateProject() {
         },
       })
       addToast(`Deployed! App ID: ${newAppId}`, 'success')
-      if (!isDonation) addToast('Go to My Projects → Set up contract to fund the token pool.', 'info', 8000)
+      if (!isDonation) addToast('Go to My garden → Set up contract to fund the token pool.', 'info', 8000)
       navigate('/my-projects')
     } catch (e) {
       console.error(e)
