@@ -13,6 +13,9 @@ import {
   buildDeleteAppTxn, buildClearStateTxn,
 } from '../utils/transactions'
 import { useToast } from '../context/ToastContext'
+
+// Lora is AlgoKit's official block explorer; matches the app's testnet config.
+const EXPLORER = 'https://lora.algokit.io/testnet'
 import {
   Cover, StatusBadge, Progress, IdTag, Icon, Identicon,
   fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue, shortAddr,
@@ -140,6 +143,8 @@ export default function ProjectDetail() {
   const [contributing, setContributing]   = useState(false)
   const [actioning, setActioning]         = useState(false)
   const [showContract, setShowContract]   = useState(false)
+  const [escrowBal, setEscrowBal]         = useState(null)   // microALGO, null = not yet fetched
+  const [escrowErr, setEscrowErr]         = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -724,31 +729,76 @@ export default function ProjectDetail() {
               </div>
             )}
 
-            {/* Contract details — demoted */}
+            {/* On-chain proof — verify independently */}
             <div>
-              <button className="btn btn-ghost btn-sm btn-block" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowContract(s => !s) }}>
-                {showContract ? 'Hide' : 'Show'} contract details
+              <button
+                className="btn btn-ghost btn-sm btn-block"
+                onClick={(e) => {
+                  e.preventDefault(); e.stopPropagation()
+                  const opening = !showContract
+                  setShowContract(opening)
+                  // Lazily verify the escrow balance straight from algod on first open
+                  if (opening && escrowBal === null && appAddress && !appDeleted) {
+                    algodClient.accountInformation(appAddress).do()
+                      .then(info => setEscrowBal(Number(info.amount ?? info['amount'] ?? 0)))
+                      .catch(() => setEscrowErr(true))
+                  }
+                }}
+              >
+                <Icon.lock style={{ width: 14, height: 14 }} /> {showContract ? 'Hide' : 'Verify'} on-chain proof
               </button>
               {showContract && (
                 <div style={{ marginTop: 14 }}>
+                  {/* Live escrow balance — read directly from the chain, not our database */}
+                  <div className="contract-row">
+                    <span>Escrow balance (live)</span>
+                    {appDeleted ? (
+                      <span className="mono" style={{ fontSize: 13, color: 'var(--text-faint)' }}>contract settled</span>
+                    ) : escrowErr ? (
+                      <span className="mono" style={{ fontSize: 13, color: 'var(--text-faint)' }}>unavailable</span>
+                    ) : escrowBal === null ? (
+                      <span className="mono" style={{ fontSize: 13, color: 'var(--text-faint)' }}>checking…</span>
+                    ) : (
+                      <span className="mono" style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>
+                        {fmtAlgo(escrowBal / 1_000_000)} ALGO
+                      </span>
+                    )}
+                  </div>
                   {[
-                    { label: 'App ID',      val: String(appId),                          copy: String(appId) },
-                    appAddress && { label: 'App Address', val: shortAddr(appAddress),    copy: appAddress },
-                    safeGs.creator && { label: 'Creator', val: shortAddr(safeGs.creator), copy: safeGs.creator },
-                    safeGs.asa_id && { label: 'ASA / Token', val: String(safeGs.asa_id), copy: String(safeGs.asa_id) },
+                    { label: 'App ID', val: String(appId), copy: String(appId), href: `${EXPLORER}/application/${appId}` },
+                    appAddress && { label: 'Escrow address', val: shortAddr(appAddress), copy: appAddress, href: `${EXPLORER}/account/${appAddress}` },
+                    safeGs.creator && { label: 'Creator', val: shortAddr(safeGs.creator), copy: safeGs.creator, href: `${EXPLORER}/account/${safeGs.creator}` },
+                    safeGs.asa_id && { label: 'ASA / Token', val: String(safeGs.asa_id), copy: String(safeGs.asa_id), href: `${EXPLORER}/asset/${safeGs.asa_id}` },
                     rate && { label: 'Token rate', val: `${tokensPerAlgo > 0 ? formatTokens(rate) : rate} / ALGO`, copy: null },
                     deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString(), copy: null },
                     deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString(), copy: null },
                     { label: 'Network', val: 'Algorand Testnet', copy: null },
-                  ].filter(Boolean).map(({ label, val, copy }) => (
+                  ].filter(Boolean).map(({ label, val, copy, href }) => (
                     <div className="contract-row" key={label}>
                       <span>{label}</span>
-                      {copy
-                        ? <IdTag value={val} />
-                        : <span className="mono" style={{ fontSize: 13, color: 'var(--accent)' }}>{val}</span>
-                      }
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        {copy
+                          ? <IdTag value={val} copyValue={copy} />
+                          : <span className="mono" style={{ fontSize: 13, color: 'var(--accent)' }}>{val}</span>
+                        }
+                        {href && (
+                          <a
+                            className="xlink"
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`View ${label} on Lora explorer`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Icon.external />
+                          </a>
+                        )}
+                      </span>
                     </div>
                   ))}
+                  <p className="field-hint" style={{ marginTop: 10 }}>
+                    Everything above is read from the Algorand blockchain — verify it yourself on any explorer.
+                  </p>
                 </div>
               )}
             </div>

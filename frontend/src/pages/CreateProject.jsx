@@ -6,6 +6,7 @@ import { buildCreateAppTxnGroup, compileTeal } from '../utils/transactions'
 import { registerProject, fetchCreatorProjectsMeta } from '../utils/api'
 import { useToast } from '../context/ToastContext'
 import { Icon } from '../components/UI'
+import ProjectCard from '../components/ProjectCard'
 
 import APPROVAL_TEAL from '../../../contracts/approval.teal?raw'
 import CLEAR_TEAL    from '../../../contracts/clear.teal?raw'
@@ -497,7 +498,37 @@ export default function CreateProject() {
         </div>
 
         <aside>
-          <div className="card summary-card">
+          {/* Live preview — exactly what backers will see on the explore grid.
+              Built from form state; pointer-events disabled so the Link inside
+              the card can't navigate away mid-form. */}
+          <div className="card summary-card" style={{ position: 'static', marginBottom: 20 }}>
+            <h4>Live preview</h4>
+            <div style={{ pointerEvents: 'none', marginTop: 4 }} aria-hidden="true">
+              <ProjectCard
+                project={{
+                  id: 0,
+                  gs: {
+                    goal: Math.max(1, Math.round((goal || 0) * 1_000_000)),
+                    raised: 0,
+                    deadline: 0,
+                    asa_id: isDonation ? 0 : 1, // preview-only: renders the card in its 'Live' state
+                  },
+                  meta: {
+                    name: form.name,
+                    tagline: form.tagline,
+                    category: form.category,
+                    is_donation: isDonation,
+                    creator_address: activeAddress || undefined,
+                  },
+                }}
+              />
+            </div>
+            <div className="sum-note" style={{ marginTop: 14 }}>
+              This is how your campaign card will appear to backers on the explore page.
+            </div>
+          </div>
+
+          <div className="card summary-card" style={{ position: 'static' }}>
             <h4>Deployment summary</h4>
             {[
               { l: 'Campaign type',     v: isDonation ? 'Donation' : 'Token launch' },

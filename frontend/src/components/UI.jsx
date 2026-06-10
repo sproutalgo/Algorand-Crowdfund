@@ -26,6 +26,7 @@ export const Icon = {
   moon:   (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M20.5 14.2A8.5 8.5 0 119.8 3.5a7 7 0 1010.7 10.7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>,
   lock:   (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.8"/><path d="M8 10.5V8a4 4 0 018 0v2.5" stroke="currentColor" strokeWidth="1.8"/></svg>,
   heart:  (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M12 20.5S3.5 15.4 3.5 9.3A4.8 4.8 0 0112 6.2a4.8 4.8 0 018.5 3.1c0 6.1-8.5 11.2-8.5 11.2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>,
+  external: (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M14 4h6v6M20 4l-8.5 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M19 13.5V18a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
 }
 
 // ── Brand ──────────────────────────────────────────────────────────────────────
@@ -59,16 +60,17 @@ export function StatusBadge({ status }) {
 }
 
 // ── Copyable ID tag ────────────────────────────────────────────────────────────
-export function IdTag({ label, value }) {
+export function IdTag({ label, value, copyValue }) {
   const [copied, setCopied] = useState(false)
+  const toCopy = copyValue ?? value
   function copy(e) {
     e.stopPropagation()
-    navigator.clipboard?.writeText(value)
+    navigator.clipboard?.writeText(toCopy)
     setCopied(true)
     setTimeout(() => setCopied(false), 1200)
   }
   return (
-    <span className="idtag" onClick={copy} title={`Copy: ${value}`}>
+    <span className="idtag" onClick={copy} title={`Copy: ${toCopy}`}>
       {label && <span style={{ color: 'var(--text-faint)' }}>{label}</span>}
       <span>{value}</span>
       {copied
