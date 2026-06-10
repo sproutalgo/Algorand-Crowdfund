@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sprout — Crowdfund on Algorand</title>
     <link rel="icon" type="image/svg+xml" href="/sprout-avatar.svg" />
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-theme',
+          localStorage.getItem('sprout-theme') || 'light'
+        )
+      } catch (e) { /* theming is non-critical */ }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

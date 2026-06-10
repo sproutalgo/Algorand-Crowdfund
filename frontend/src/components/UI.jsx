@@ -22,6 +22,10 @@ export const Icon = {
   globe:  (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" stroke="currentColor" strokeWidth="1.7"/></svg>,
   spark:  (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M12 3v6M12 15v6M3 12h6M15 12h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
   search: (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8"/><path d="M20 20l-3-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  sun:    (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.8"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  moon:   (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M20.5 14.2A8.5 8.5 0 119.8 3.5a7 7 0 1010.7 10.7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>,
+  lock:   (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.8"/><path d="M8 10.5V8a4 4 0 018 0v2.5" stroke="currentColor" strokeWidth="1.8"/></svg>,
+  heart:  (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M12 20.5S3.5 15.4 3.5 9.3A4.8 4.8 0 0112 6.2a4.8 4.8 0 018.5 3.1c0 6.1-8.5 11.2-8.5 11.2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>,
 }
 
 // ── Brand ──────────────────────────────────────────────────────────────────────
@@ -78,34 +82,88 @@ export function IdTag({ label, value }) {
 // ── Progress bar ───────────────────────────────────────────────────────────────
 export function Progress({ raised, goal, animated = true }) {
   const p = Math.min(100, Math.round((raised / goal) * 100)) || 0
+  const done = p >= 100
+  const near = !done && p >= 85
   return (
-    <div className={`progress${p >= 100 ? ' done' : ''}`}>
+    <div className={`progress${done ? ' done' : ''}${near ? ' near' : ''}`}>
       <i style={{ width: animated ? `${p}%` : `${p}%` }} />
     </div>
   )
 }
 
-// ── Cover art (gradient identity per project) ──────────────────────────────────
+// ── Cover art (seeded botanical identity per project) ──────────────────────────
+// Same props API as before. When no image is set, renders a deterministic
+// arrangement of Sprout leaves seeded from the project's symbol/label, tinted
+// by category hue. Lightness adapts to the active theme via CSS variables.
+const LEAF_PATH = 'M0 30 Q23.2 23.7 27 0 Q3.8 6.3 0 30 Z'
+
+function seededRand(str) {
+  let h = 2166136261
+  const s = String(str)
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return () => {
+    h ^= h << 13; h ^= h >>> 17; h ^= h << 5
+    return ((h >>> 0) % 10000) / 10000
+  }
+}
+
 export function Cover({ hue = 280, label, style, sym, imageUrl, className = '' }) {
   if (imageUrl) {
     return (
       <div className={`cover-ph ${className}`} style={{ backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', ...style }}>
-        {sym && <span className="ph-sym">${sym}</span>}
+        {sym && <span className="ph-sym" style={{ color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>${sym}</span>}
         {label && <span className="ph-label">{label}</span>}
       </div>
     )
   }
+  const rand = seededRand(`${sym || ''}|${label || ''}|${hue}`)
+  const leaves = Array.from({ length: 6 }, (_, i) => ({
+    x: 8 + rand() * 84,
+    y: 8 + rand() * 64,
+    s: 0.8 + rand() * 1.6,
+    r: Math.round(rand() * 360),
+    flip: rand() > 0.5 ? -1 : 1,
+    key: i,
+  }))
   return (
     <div className={`cover-ph ${className}`} style={{
-      background: `
-        repeating-linear-gradient(135deg, oklch(1 0 0 / 0.035) 0 16px, transparent 16px 32px),
-        radial-gradient(120% 120% at 15% 10%, oklch(0.5 0.16 ${hue} / 0.55), transparent 55%),
-        linear-gradient(160deg, oklch(0.32 0.10 ${hue}), oklch(0.20 0.04 ${hue}))`,
+      background: `linear-gradient(155deg, oklch(var(--cover-l1) 0.055 ${hue}), oklch(var(--cover-l2) 0.07 ${hue}))`,
       ...style,
     }}>
-      {sym && <span className="ph-sym">${sym}</span>}
+      <svg className="ph-leaves" viewBox="0 0 100 80" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        {leaves.map(l => (
+          <g key={l.key} transform={`translate(${l.x} ${l.y}) rotate(${l.r}) scale(${l.s * l.flip} ${l.s})`}>
+            <path d={LEAF_PATH} transform="scale(0.5)" fill={`oklch(var(--cover-leaf-l) 0.10 ${hue} / var(--cover-leaf-a))`} />
+          </g>
+        ))}
+      </svg>
+      {sym && <span className="ph-sym" style={{ color: `oklch(var(--cover-sym-l) 0.10 ${hue})` }}>${sym}</span>}
       {label && <span className="ph-label">{label}</span>}
     </div>
+  )
+}
+
+// ── Identicon (deterministic avatar from a wallet address) ─────────────────────
+export function Identicon({ seed = '', size = 20 }) {
+  let h = 0
+  const s = String(seed)
+  for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0
+  const hue = h % 360
+  const init = (s.replace(/[^A-Z0-9]/gi, '').slice(0, 2) || '··').toUpperCase()
+  return (
+    <span
+      className="identicon"
+      aria-hidden="true"
+      style={{
+        width: size, height: size,
+        background: `oklch(var(--idn-bg-l) 0.09 ${hue})`,
+        color: `oklch(var(--idn-fg-l) 0.10 ${hue})`,
+        fontSize: Math.max(8, Math.round(size * 0.42)),
+      }}
+    >{init}</span>
   )
 }
 

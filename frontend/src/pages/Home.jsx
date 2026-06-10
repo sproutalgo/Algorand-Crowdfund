@@ -3,16 +3,17 @@ import { algodClient, fetchOnChainBatch, gsFromCache } from '../utils/algorand'
 import { Link } from 'react-router-dom'
 import { fetchPublicProjects } from '../utils/api'
 import ProjectCard from '../components/ProjectCard'
-import { SkeletonCard, Icon, Stat, Progress, fmtAlgo, pctNum, deriveProjectStatus, categoryHue } from '../components/UI'
+import { SkeletonCard, Icon, Stat, deriveProjectStatus } from '../components/UI'
 
-const FILTERS   = ['All', 'DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other', 'Cancelled']
-const PAGE_SIZE = 50
+const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other']
+const PAGE_SIZE  = 50
 
 export default function Home() {
   const [projects, setProjects]     = useState([])
   const [loading, setLoading]       = useState(true)
   const [filter, setFilter]         = useState('All')
   const [showDonations, setShowDonations] = useState(true)
+  const [showCancelled, setShowCancelled] = useState(false)
   const [search, setSearch]         = useState('')
   const [error, setError]           = useState(null)
   const [page, setPage]             = useState(1)
@@ -119,46 +120,15 @@ export default function Home() {
     }
   }, [filter, search]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sprout placeholder card — always shown first as a formatting example
-  const PLACEHOLDER = {
-    id: 'demo',
-    deleted: false,
-    gs: {
-      goal:         50_000_000_000,
-      raised:       0,
-      funded_round: 1,
-      rate:         100,
-      deadline:     0,
-      asa_id:       1,
-    },
-    meta: {
-      app_id:        'demo',
-      name:          'Sprout',
-      tagline:       'The grassroots Algorand crowdfunding platform.',
-      description:   'Click to see a full example of what your campaign page will look like.',
-      category:      'Infrastructure',
-      token_name:    'SPRT',
-      goal_micro:    50_000_000_000,
-      is_funded:     true,
-      is_distributed: false,
-      is_refunded:   false,
-      is_cancelled:  false,
-      is_hidden:     false,
-    },
-    isPlaceholder: true,
-  }
-
-  const filtered = projects.filter(p => {
+  // ── Client-side visibility (everything except the category filter) ──
+  const baseVisible = projects.filter(p => {
     const m = p.meta || {}
     const status = deriveProjectStatus(p, currentRound)
     const isCancelled = status === 'cancelled'
-    if (m.is_hidden)   return false
-    if (isCancelled && filter !== 'All' && filter !== 'Cancelled') return false
-    if (!isCancelled && filter === 'Cancelled') return false
+    if (m.is_hidden) return false
+    if (isCancelled && !showCancelled) return false
     if (!isCancelled && !p.gs?.asa_id && !m.is_donation && status !== 'distributed') return false
     if (m.is_donation && !showDonations) return false
-    const cat = m.category || 'Other'
-    if (filter !== 'All' && filter !== 'Cancelled' && cat !== filter) return false
     if (search) {
       const q = search.toLowerCase()
       if (!m.name?.toLowerCase().includes(q) && !m.tagline?.toLowerCase().includes(q) && !String(p.id).includes(q)) return false
@@ -166,18 +136,39 @@ export default function Home() {
     return true
   })
 
+  // Filter chips derive from what's actually visible — empty categories
+  // never render, so the row is self-pruning as the platform grows.
+  const catCounts = baseVisible.reduce((acc, p) => {
+    const cat = p.meta?.category || 'Other'
+    acc[cat] = (acc[cat] || 0) + 1
+    return acc
+  }, {})
+  const chips = CATEGORIES.filter(c => (catCounts[c] || 0) > 0 || c === filter)
+
+  const filtered = filter === 'All'
+    ? baseVisible
+    : baseVisible.filter(p => (p.meta?.category || 'Other') === filter)
+
+  // ── Hero data ──
   const statsBase = allProjects.length > 0 ? allProjects : projects
+  const totalPledged = Math.round(statsBase.reduce((s, p) => s + Number(p.gs?.raised ?? 0), 0) / 1_000_000)
+  const liveCount = statsBase.filter(p => deriveProjectStatus(p, currentRound) === 'active').length
   const fundedCount = statsBase.filter(p => {
     const s = deriveProjectStatus(p, currentRound)
     return s === 'funded' || s === 'distributed'
   }).length
+  const hasStats = totalPledged > 0 || liveCount > 0 || fundedCount > 0
 
   const featuredProjects = [...statsBase]
     .filter(p => p.meta?.is_featured)
     .sort((a, b) => (a.meta?.feature_order ?? 0) - (b.meta?.feature_order ?? 0))
     .slice(0, 3)
-
-  const heroCards = featuredProjects.length > 0 ? featuredProjects : filtered.slice(0, 3)
+  const visibleForHero = statsBase.filter(p => {
+    const m = p.meta || {}
+    const status = deriveProjectStatus(p, currentRound)
+    return !m.is_hidden && status !== 'cancelled' && (p.gs?.asa_id || m.is_donation || status === 'distributed')
+  })
+  const heroProject = featuredProjects[0] ?? visibleForHero[0] ?? null
 
   return (
     <div className="rise">
@@ -190,60 +181,81 @@ export default function Home() {
               Live on Algorand Testnet
             </span>
             <h1 style={{ marginTop: 22 }}>
-              The Algorand launchpad.<br />
-              <span style={{ color: '#2FBE73' }}>Grassroots</span> funding. Real ownership.
+              Back projects you believe in.<br />
+              Tokens if they fund — <span className="accent">every ALGO back</span> if they don't.
             </h1>
             <p className="hero-sub">
-              The transparent crowdfunding platform built for on-chain developers and the investors who back them.
+              Refunds are automatic and enforced by the smart contract, not a promise.
+              Sprout is grassroots crowdfunding for the Algorand ecosystem.
             </p>
             <div className="hero-actions">
-              <Link to="/create" className="btn btn-primary btn-lg">
-                Launch a project <Icon.arrow style={{ width: 18, height: 18 }} />
-              </Link>
+              <a href="#explore-grid" className="btn btn-primary btn-lg">
+                Explore campaigns <Icon.arrow style={{ width: 18, height: 18 }} />
+              </a>
               <Link to="/faq" className="btn btn-ghost btn-lg">
-                How it works
+                How escrow works
               </Link>
             </div>
-            <div className="hero-stats">
-              <Stat value={(() => {
-                const total = Math.round(statsBase.reduce((s, p) => s + Number(p.gs?.raised ?? 0), 0) / 1_000_000)
-                return total >= 1000 ? `${(total / 1000).toFixed(1)}k` : String(total)
-              })()} label="ALGO pledged" accent />
-              <Stat value={statsBase.filter(p => deriveProjectStatus(p, currentRound) === 'active').length} label="Live campaigns" />
-              <Stat value="100%" label="Refund guarantee" />
-            </div>
+            {hasStats && (
+              <div className="hero-stats">
+                {totalPledged > 0 && (
+                  <Stat
+                    value={totalPledged >= 1000 ? `${(totalPledged / 1000).toFixed(1)}k` : String(totalPledged)}
+                    label="ALGO pledged"
+                    accent
+                  />
+                )}
+                {liveCount > 0 && <Stat value={liveCount} label="Growing now" />}
+                {fundedCount > 0 && <Stat value={fundedCount} label="Fully funded" />}
+              </div>
+            )}
           </div>
 
-          {/* Floating preview cards */}
-          <div className="hero-art">
-            {heroCards.slice(0, 3).map((p, i) => {
-              const raised = Number(p.gs?.raised ?? 0)
-              const goal   = Number(p.gs?.goal   ?? 1)
-              const pc     = pctNum(raised, goal)
-              return (
-                <div key={p.id} className={`float-card fc-${i + 1}`}>
-                  <div className="fc-top" />
-                  <div className="fc-row">
-                    <div>
-                      <div className="fc-name">{p.meta?.name || `Project #${p.id}`}</div>
-                      <span className="badge">{p.meta?.category || 'Other'}</span>
-                    </div>
-                    <div className="fc-pct">{pc}%</div>
-                  </div>
-                  <div style={{ marginTop: 14 }}><Progress raised={raised} goal={goal} /></div>
-                </div>
-              )
-            })}
-          </div>
+          {/* Featured campaign — a real, clickable card */}
+          {loading && !heroProject ? (
+            <div className="hero-featured" aria-hidden="true"><SkeletonCard /></div>
+          ) : heroProject ? (
+            <div className="hero-featured">
+              <span className="featured-flag">Featured</span>
+              <ProjectCard project={heroProject} currentRound={currentRound} />
+            </div>
+          ) : (
+            <div className="first-wave">
+              <Icon.spark style={{ width: 26, height: 26, color: 'var(--accent)' }} />
+              <h3>The first wave starts here</h3>
+              <p>
+                Sprout is brand new — no campaigns have launched yet. Deploy yours
+                and it will be the first thing every visitor sees.
+              </p>
+              <Link to="/create" className="btn btn-primary" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                Launch a project
+              </Link>
+            </div>
+          )}
         </div>
       </section>
+
+      {/* ── Trust strip ── */}
+      <div className="trust-strip">
+        <div className="trust-strip-inner">
+          <Link to="/faq" className="trust-item">
+            <Icon.lock /> Funds held in non-custodial contract escrow
+          </Link>
+          <Link to="/faq" className="trust-item">
+            <Icon.refund /> Automatic full refund if the goal isn't met
+          </Link>
+          <Link to="/faq" className="trust-item">
+            <Icon.check /> 4% fee — charged only on success
+          </Link>
+        </div>
+      </div>
 
       {/* ── Explore grid ── */}
       <section className="section wrap" id="explore-grid">
         <div className="section-head">
           <div>
             <span className="eyebrow">Discover</span>
-            <h2 className="section-title" style={{ marginTop: 10 }}>Explore campaigns</h2>
+            <h2 className="section-title" style={{ marginTop: 10 }}>Growing now</h2>
           </div>
           <div className="search">
             <Icon.search />
@@ -255,25 +267,31 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="filters" style={{ marginBottom: 16 }}>
-          {FILTERS.map(f => (
-            <button key={f} className={`chip${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>{f}</button>
-          ))}
-          <button
-            className={`chip${showDonations ? ' active' : ''}`}
-            onClick={() => setShowDonations(s => !s)}
-            style={{ marginLeft: 'auto', opacity: showDonations ? 1 : 0.6 }}
-          >
-            {showDonations ? '♥ Donations' : '♥ Donations'}
+        <div className="filters" style={{ marginBottom: 24 }}>
+          <button className={`chip${filter === 'All' ? ' active' : ''}`} onClick={() => setFilter('All')}>
+            All {baseVisible.length > 0 && <span className="n">{baseVisible.length}</span>}
           </button>
-        </div>
-
-        <div style={{
-          fontSize: 12, color: 'var(--text-muted)', marginBottom: 20,
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          <Icon.shield style={{ width: 12, height: 12, flexShrink: 0 }} />
-          Campaign statuses refresh every 2 minutes. Click any campaign for real-time details.
+          {chips.map(c => (
+            <button key={c} className={`chip${filter === c ? ' active' : ''}`} onClick={() => setFilter(c)}>
+              {c} <span className="n">{catCounts[c] || 0}</span>
+            </button>
+          ))}
+          <div className="filters-end">
+            <button
+              className={`chip${showDonations ? ' active' : ''}`}
+              onClick={() => setShowDonations(s => !s)}
+              aria-pressed={showDonations}
+            >
+              <Icon.heart /> {showDonations ? 'Donations shown' : 'Donations hidden'}
+            </button>
+            <button
+              className={`chip${showCancelled ? ' active' : ''}`}
+              onClick={() => setShowCancelled(s => !s)}
+              aria-pressed={showCancelled}
+            >
+              {showCancelled ? 'Hiding nothing' : 'Show cancelled'}
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -282,25 +300,37 @@ export default function Home() {
           </div>
         ) : error ? (
           <div className="error-box">⚠ {error}</div>
-        ) : filtered.length === 0 && (filter === 'Cancelled' || !!search) ? (
+        ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
               <circle cx="32" cy="32" r="31" stroke="var(--border-strong)" strokeWidth="1.5" strokeDasharray="4 4" />
-              <circle cx="32" cy="32" r="18" stroke="var(--border-strong)" strokeWidth="1" />
-              <path d="M24 32L32 24L40 32L32 40Z" stroke="var(--accent)" strokeWidth="1.5" fill="none" />
-              <circle cx="32" cy="32" r="3" fill="var(--accent)" opacity="0.5" />
+              <path d="M32 48V34" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M32 36c0-7 5-12 12-13-1 7-5 12-12 13z" fill="var(--accent)" opacity="0.7" />
+              <path d="M32 40c0-5-4-9-9-10 1 5 4 9 9 10z" fill="var(--accent)" opacity="0.45" />
             </svg>
-            <h3>{projects.length === 0 ? 'No campaigns yet' : 'Nothing matches'}</h3>
-            <p>{projects.length === 0 ? 'Be the first to launch a crowdfunding campaign on Sprout.' : 'Try a different filter or clear your search.'}</p>
-            {projects.length === 0 && <Link to="/create" className="btn btn-primary" style={{ marginTop: 8 }}>Launch a project</Link>}
+            <h3>{projects.length === 0 ? 'Nothing planted yet' : 'Nothing matches'}</h3>
+            <p>
+              {projects.length === 0
+                ? 'Be the first to launch a crowdfunding campaign on Sprout.'
+                : 'Try a different filter or clear your search.'}
+            </p>
+            {projects.length === 0 && (
+              <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Link to="/create" className="btn btn-primary">Launch a project</Link>
+                <Link to="/project/demo" className="btn btn-ghost">See an example campaign</Link>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="grid-cards">
-            {filter !== 'Cancelled' && !search && (
-              <ProjectCard key="placeholder" project={PLACEHOLDER} currentRound={currentRound} />
-            )}
-            {filtered.map(p => <ProjectCard key={p.id} project={p} currentRound={currentRound} />)}
-          </div>
+          <>
+            <div className="grid-cards">
+              {filtered.map(p => <ProjectCard key={p.id} project={p} currentRound={currentRound} />)}
+            </div>
+            <div className="demo-banner">
+              <p>New here? See a full example of what a campaign page looks like.</p>
+              <Link to="/project/demo" className="btn btn-ghost btn-sm">View the example campaign</Link>
+            </div>
+          </>
         )}
 
         {/* Pagination controls */}
@@ -325,6 +355,10 @@ export default function Home() {
             </button>
           </div>
         )}
+
+        <p className="grid-foot">
+          Listings refresh about every two minutes — open any campaign for live on-chain figures.
+        </p>
       </section>
 
       {/* ── How it works ── */}

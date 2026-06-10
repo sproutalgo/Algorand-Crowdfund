@@ -10,10 +10,18 @@ export default function Layout({ children }) {
   const [walletOpen, setWalletOpen]   = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileOpen, setMobileOpen]   = useState(false)
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('sprout-theme') || 'light' } catch { return 'light' }
+  })
   const dropdownRef = useRef(null)
   const { activeAddress, wallets } = useWallet()
   const location = useLocation()
   const isAdmin = activeAddress === ADMIN_ADDRESS
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try { localStorage.setItem('sprout-theme', theme) } catch { /* non-critical */ }
+  }, [theme])
 
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
@@ -35,10 +43,10 @@ export default function Layout({ children }) {
   }
 
   const nav = [
-    { label: 'Explore',     to: '/' },
-    { label: 'My Projects', to: '/my-projects' },
-    { label: 'FAQ',         to: '/faq' },
-    { label: 'Cleanup',     to: '/cleanup' },
+    { label: 'Explore',   to: '/' },
+    { label: 'My garden', to: '/my-projects' },
+    { label: 'FAQ',       to: '/faq' },
+    { label: 'Cleanup',   to: '/cleanup' },
     ...(isAdmin ? [{ label: 'Admin', to: '/admin', danger: true, icon: <Icon.shield style={{ width: 13, height: 13 }} /> }] : []),
   ]
 
@@ -47,7 +55,7 @@ export default function Layout({ children }) {
       <header className="nav">
         <div className="nav-inner">
           <Link to="/" aria-label="Sprout — home" style={{ textDecoration: 'none' }}>
-            <SproutLogo height={22} />
+            <SproutLogo height={22} color={theme === 'dark' ? '#EAF2EC' : '#11271B'} />
           </Link>
 
           <nav className="nav-links">
@@ -69,6 +77,15 @@ export default function Layout({ children }) {
           <div className="nav-spacer" />
 
           <Link to="/create" className="nav-cta">Launch a project</Link>
+
+          <button
+            className="theme-toggle"
+            onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+          >
+            {theme === 'dark' ? <Icon.sun /> : <Icon.moon />}
+          </button>
 
           <div style={{ position: 'relative' }} ref={dropdownRef}>
             {activeAddress ? (
@@ -131,7 +148,7 @@ export default function Layout({ children }) {
 
       <footer className="footer">
         <div className="footer-inner wrap">
-          <SproutLogo height={18} />
+          <SproutLogo height={18} color={theme === 'dark' ? '#EAF2EC' : '#11271B'} />
           <span>Permissionless crowdfunding on Algorand Testnet</span>
           <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             <Link to="/privacy" style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Privacy Policy</Link>

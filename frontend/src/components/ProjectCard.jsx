@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React from 'react'
+import { Link } from 'react-router-dom'
 import {
-  Cover, StatusBadge, Progress,
-  fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue,
+  Cover, StatusBadge, Progress, Identicon,
+  fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue, shortAddr,
 } from './UI'
 
 export default function ProjectCard({ project, currentRound = 0 }) {
   const { id, gs = {}, meta = {}, deleted, isPlaceholder } = project
-  const navigate = useNavigate()
 
   const raised      = Number(gs.raised      ?? 0)
   const goal        = Number(gs.goal        ?? meta.goal_micro ?? 1)
@@ -18,16 +17,15 @@ export default function ProjectCard({ project, currentRound = 0 }) {
   const isFundedOrDistributed = fundedRound > 0 || !!meta.is_distributed || !!meta.is_funded
   const displayRaised = isFundedOrDistributed ? goal : raised
   const pct           = pctNum(displayRaised, goal)
-  const days          = daysLeftLabel(deadline, 0)
-
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setMounted(true), 80); return () => clearTimeout(t) }, [])
+  const days          = daysLeftLabel(deadline, currentRound)
+  const nearGoal      = pct >= 85 && pct < 100
+  const creator       = meta.creator_address
 
   return (
-    <article
+    <Link
+      to={isPlaceholder ? '/project/demo' : `/project/${id}`}
       className="pcard"
-      onClick={() => isPlaceholder ? navigate('/project/demo') : navigate(`/project/${id}`)}
-      style={isPlaceholder ? { cursor: 'pointer' } : undefined}
+      aria-label={`${meta.name || `Project #${id}`} — ${pct}% funded`}
     >
       {isPlaceholder && (
         <div style={{
@@ -51,17 +49,23 @@ export default function ProjectCard({ project, currentRound = 0 }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span className="badge">{meta.category || 'Other'}</span>
           {meta.is_donation && (
-            <span className="badge" style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent-line)" }}>Donation</span>
+            <span className="badge badge-accent">Donation</span>
           )}
           <StatusBadge status={status} />
         </div>
         <h3 className="pcard-title">{meta.name || `Project #${id}`}</h3>
+        {creator && (
+          <div className="pcard-creator">
+            <Identicon seed={creator} size={20} />
+            <span className="mono">{shortAddr(creator)}</span>
+          </div>
+        )}
         <p className="pcard-tag">{meta.tagline || 'A project on Algorand.'}</p>
         <Progress raised={displayRaised} goal={goal} />
         <div className="pcard-stats">
           <div>
-            <b style={{ color: 'var(--accent)' }}>{pct}%</b>
-            <span>funded</span>
+            <b style={{ color: nearGoal ? 'var(--warn)' : 'var(--accent)' }}>{pct}%</b>
+            <span>{nearGoal ? 'almost there' : 'grown'}</span>
           </div>
           <div>
             <b>{fmtAlgo(displayRaised / 1_000_000)}</b>
@@ -73,6 +77,6 @@ export default function ProjectCard({ project, currentRound = 0 }) {
           </div>
         </div>
       </div>
-    </article>
+    </Link>
   )
 }
