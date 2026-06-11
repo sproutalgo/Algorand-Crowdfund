@@ -60,6 +60,7 @@ export default function CreateProject() {
   const [selectedSeriesAppId, setSelectedSeriesAppId] = useState('')
   const [milestoneTitle, setMilestoneTitle]   = useState('')
   const [milestoneDesc, setMilestoneDesc]     = useState('')
+  const [seriesTotalGoal, setSeriesTotalGoal] = useState('') // ALGO, optional, series-wide
   const [plannedMilestones, setPlannedMilestones] = useState([{ title: '', description: '' }])
 
   // Load creator's existing projects for series linking
@@ -164,6 +165,10 @@ export default function CreateProject() {
           highlights: form.highlights.filter(h => h.trim()),
           isDonation,
           seriesId,
+          seriesGoalMicro:
+            seriesId && Number(seriesTotalGoal) >= goal && Number(seriesTotalGoal) > 0
+              ? Math.round(Number(seriesTotalGoal) * 1_000_000)
+              : null,
           milestoneNumber,
           milestoneTitle:       milestoneTitle || null,
           milestoneDescription: milestoneDesc  || null,
@@ -355,6 +360,23 @@ export default function CreateProject() {
                     <label>Milestone description</label>
                     <textarea className="textarea" style={{ minHeight: 60 }} placeholder="What will be delivered in this milestone?" value={milestoneDesc} onChange={e => setMilestoneDesc(e.target.value)} />
                   </div>
+                  <div className="field" style={{ marginBottom: 12 }}>
+                    <label>Total series goal (ALGO) — optional</label>
+                    <input
+                      className="input no-spin"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="e.g. 500000"
+                      value={seriesTotalGoal}
+                      onChange={e => setSeriesTotalGoal(e.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                    <span className="field-hint" style={Number(seriesTotalGoal) > 0 && goal > 0 && Number(seriesTotalGoal) < goal ? { color: 'var(--warn)' } : undefined}>
+                      {Number(seriesTotalGoal) > 0 && goal > 0 && Number(seriesTotalGoal) < goal
+                        ? `Must be at least this campaign's goal (${goal.toLocaleString()} ALGO) — it won't be saved otherwise.`
+                        : 'The overall funding target across every milestone in this series. Backers see it as series-level progress on your campaign page.'}
+                    </span>
+                  </div>
 
                   <div className="field">
                     <label>Planned future milestones</label>
@@ -539,6 +561,9 @@ export default function CreateProject() {
               { l: 'Success fee (4%)',  v: successFeeAlgo ? `${successFeeAlgo} ALGO` : '—' },
               ...(!isDonation && tokensNeeded ? [{ l: 'Tokens to provide', v: tokensNeeded }] : []),
               ...(milestoneTitle ? [{ l: 'Milestone', v: milestoneTitle }] : []),
+              ...((selectedSeriesAppId || milestoneTitle) && Number(seriesTotalGoal) > 0
+                ? [{ l: 'Series total goal', v: `${Number(seriesTotalGoal).toLocaleString()} ALGO` }]
+                : []),
             ].map(({ l, v }) => (
               <div className="sum-row" key={l}>
                 <span className="s-lbl">{l}</span>

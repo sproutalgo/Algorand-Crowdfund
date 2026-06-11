@@ -95,6 +95,7 @@ export async function registerProject({ address, appId, meta }) {
       ratePerAlgo:          meta.ratePerAlgo,
       highlights:           meta.highlights,
       seriesId:             meta.seriesId,
+      seriesGoalMicro:      meta.seriesGoalMicro,
       milestoneNumber:      meta.milestoneNumber,
       milestoneTitle:       meta.milestoneTitle,
       milestoneDescription: meta.milestoneDescription,

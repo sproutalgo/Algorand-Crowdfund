@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
       websiteUrl, deckUrl, imageUrl, goalMicro, ratePerAlgo,
       highlights,
       isDonation, seriesId, milestoneNumber, milestoneTitle,
-      milestoneDescription, plannedMilestones,
+      milestoneDescription, plannedMilestones, seriesGoalMicro,
     } = req.body
 
     const appId = parseAppId(rawAppId)
@@ -125,7 +125,7 @@ router.post('/', async (req, res) => {
       websiteUrl, deckUrl, imageUrl, tokenName,
       goalMicro, ratePerAlgo, highlights,
       isDonation, seriesId, milestoneNumber, milestoneTitle,
-      milestoneDescription, plannedMilestones,
+      milestoneDescription, plannedMilestones, seriesGoalMicro,
     })
 
     // Populate on_chain_* cache immediately so the explore and My Projects
@@ -276,7 +276,7 @@ router.get('/series/:seriesId', async (req, res) => {
     const { seriesId } = req.params
     const { data, error } = await (await import('../utils/supabase.js')).supabasePublic
       .from('projects')
-      .select('app_id, name, tagline, goal_micro, milestone_number, milestone_title, milestone_description, milestone_completed_at, is_funded, is_distributed, on_chain_raised, on_chain_funded_round, created_at')
+      .select('app_id, name, tagline, goal_micro, series_goal_micro, milestone_number, milestone_title, milestone_description, milestone_completed_at, is_funded, is_distributed, on_chain_raised, on_chain_funded_round, created_at')
       .eq('series_id', seriesId)
       .order('milestone_number', { ascending: true })
     if (error) throw error

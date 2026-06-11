@@ -121,6 +121,7 @@ export async function createProject({
   milestoneTitle,
   milestoneDescription,
   plannedMilestones,
+  seriesGoalMicro,
 }) {
   if (!name || String(name).trim().length === 0) throw new Error('name is required')
   if (String(name).length > 60)          throw new Error('name exceeds 60 characters')
@@ -129,6 +130,19 @@ export async function createProject({
   if (String(websiteUrl || '').length > 200)   throw new Error('websiteUrl exceeds 200 characters')
   const urlError = validateWebsiteUrl(websiteUrl)
   if (urlError) throw new Error(urlError)
+
+  // Series total goal: only meaningful for series members, must be a sane
+  // positive integer at least as large as this campaign's own goal.
+  let seriesGoal = null
+  if (seriesGoalMicro != null && seriesGoalMicro !== '') {
+    seriesGoal = Number(seriesGoalMicro)
+    if (!Number.isFinite(seriesGoal) || seriesGoal <= 0) throw new Error('seriesGoalMicro must be a positive number')
+    if (!seriesId) throw new Error('seriesGoalMicro requires the campaign to be part of a series')
+    if (Number(goalMicro) > 0 && seriesGoal < Number(goalMicro)) {
+      throw new Error('seriesGoalMicro cannot be smaller than this campaign\'s own goal')
+    }
+    seriesGoal = Math.round(seriesGoal)
+  }
 
   const { data, error } = await supabase
     .from('projects')
@@ -148,6 +162,7 @@ export async function createProject({
       is_donation:          Boolean(isDonation),
       highlights:           highlights || null,
       series_id:            seriesId || null,
+      series_goal_micro:    seriesGoal,
       milestone_number:     milestoneNumber ? Number(milestoneNumber) : null,
       milestone_title:      milestoneTitle || null,
       milestone_description: milestoneDescription || null,

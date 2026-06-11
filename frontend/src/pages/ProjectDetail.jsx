@@ -37,6 +37,17 @@ function SeriesTimeline({ seriesId, currentAppId, meta }) {
   const planned = meta.planned_milestones || []
   const nextNum = series.length + 1
 
+  // Series-level progress: total goal comes from the current campaign's row,
+  // falling back to any series member that has one set. Raised counts each
+  // funded milestone at its full goal, and live milestones at their cached raise.
+  const totalGoalMicro =
+    Number(meta.series_goal_micro || 0) ||
+    series.reduce((found, m) => found || Number(m.series_goal_micro || 0), 0)
+  const seriesRaisedMicro = series.reduce((sum, m) => {
+    const isFunded = m.is_funded || m.is_distributed || Number(m.on_chain_funded_round) > 0
+    return sum + (isFunded ? Number(m.goal_micro || 0) : Number(m.on_chain_raised || 0))
+  }, 0)
+
   if (loading || (series.length === 0 && planned.length === 0)) return null
 
   return (
@@ -47,6 +58,18 @@ function SeriesTimeline({ seriesId, currentAppId, meta }) {
         <br />
         <em>Note: Milestones are creator commitments and are not enforced on-chain. Sprout does not verify milestone completion.</em>
       </p>
+      {totalGoalMicro > 0 && (
+        <div style={{ marginBottom: 20, padding: '14px 16px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9, gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Series progress</span>
+            <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
+              <span className="mono" style={{ color: 'var(--accent)', fontWeight: 600 }}>{fmtAlgo(seriesRaisedMicro / 1_000_000)}</span>
+              {' '}of {fmtAlgo(totalGoalMicro / 1_000_000)} ALGO across {series.length} milestone{series.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <Progress raised={seriesRaisedMicro} goal={totalGoalMicro} />
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {series.map((m, i) => {
           const isCurrent  = Number(m.app_id) === Number(currentAppId)
