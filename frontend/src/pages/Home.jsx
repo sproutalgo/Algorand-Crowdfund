@@ -185,8 +185,9 @@ export default function Home() {
               Tokens if they fund — <span className="accent">every ALGO back</span> if they don't.
             </h1>
             <p className="hero-sub">
-              Refunds are automatic and enforced by the smart contract, not a promise.
-              Sprout is grassroots crowdfunding for the Algorand ecosystem.
+              Refunds are guaranteed by the smart contract, not a promise — if a campaign
+              misses its goal, you claim yours back in one click. Sprout is grassroots
+              crowdfunding for the Algorand ecosystem.
             </p>
             <div className="hero-actions">
               <a href="#explore-grid" className="btn btn-primary btn-lg">
@@ -242,7 +243,7 @@ export default function Home() {
             <Icon.lock /> Funds held in non-custodial contract escrow
           </Link>
           <Link to="/faq" className="trust-item">
-            <Icon.refund /> Automatic full refund if the goal isn't met
+            <Icon.refund /> Full refunds, enforced by contract, if the goal is missed
           </Link>
           <Link to="/faq" className="trust-item">
             <Icon.check /> 4% fee — charged only on success
@@ -252,6 +253,12 @@ export default function Home() {
 
       {/* ── Explore grid ── */}
       <section className="section wrap" id="explore-grid">
+        {(loading || projects.length > 0) && (
+          <Link to="/project/demo" className="demo-strip">
+            <span><strong>New here?</strong> See a full example of what a campaign page looks like.</span>
+            <span className="demo-strip-cta">View the example campaign <Icon.arrow style={{ width: 14, height: 14 }} /></span>
+          </Link>
+        )}
         <div className="section-head">
           <div>
             <span className="eyebrow">Discover</span>
@@ -322,15 +329,9 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <>
-            <div className="grid-cards">
-              {filtered.map(p => <ProjectCard key={p.id} project={p} currentRound={currentRound} />)}
-            </div>
-            <div className="demo-banner">
-              <p>New here? See a full example of what a campaign page looks like.</p>
-              <Link to="/project/demo" className="btn btn-ghost btn-sm">View the example campaign</Link>
-            </div>
-          </>
+          <div className="grid-cards">
+            {filtered.map(p => <ProjectCard key={p.id} project={p} currentRound={currentRound} />)}
+          </div>
         )}
 
         {/* Pagination controls */}
