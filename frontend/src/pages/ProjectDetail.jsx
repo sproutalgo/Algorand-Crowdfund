@@ -21,7 +21,7 @@ import {
   fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue, shortAddr,
 } from '../components/UI'
 
-function SeriesTimeline({ seriesId, currentAppId, meta }) {
+function SeriesTimeline({ seriesId, currentAppId, meta, liveRaised = 0 }) {
   const [series, setSeries] = React.useState([])
   const [loading, setLoading] = React.useState(true)
 
@@ -39,13 +39,21 @@ function SeriesTimeline({ seriesId, currentAppId, meta }) {
 
   // Series-level progress: total goal comes from the current campaign's row,
   // falling back to any series member that has one set. Raised counts each
-  // funded milestone at its full goal, and live milestones at their cached raise.
+  // funded milestone at its full goal; live milestones use on_chain_raised
+  // from the series query, falling back to the current campaign's live gs
+  // (which is already loaded by ProjectDetail and passed via meta).
   const totalGoalMicro =
     Number(meta.series_goal_micro || 0) ||
     series.reduce((found, m) => found || Number(m.series_goal_micro || 0), 0)
   const seriesRaisedMicro = series.reduce((sum, m) => {
     const isFunded = m.is_funded || m.is_distributed || Number(m.on_chain_funded_round) > 0
-    return sum + (isFunded ? Number(m.goal_micro || 0) : Number(m.on_chain_raised || 0))
+    if (isFunded) return sum + Number(m.goal_micro || 0)
+    // For the current campaign, prefer the live gs value passed via meta context
+    // since the series query's on_chain_raised may lag behind the sync job.
+    if (Number(m.app_id) === Number(currentAppId)) {
+      return sum + liveRaised
+    }
+    return sum + Number(m.on_chain_raised || 0)
   }, 0)
 
   if (loading || (series.length === 0 && planned.length === 0)) return null
@@ -485,7 +493,7 @@ export default function ProjectDetail() {
 
           {/* Series / milestone timeline */}
           {(meta.series_id || meta.milestone_title) && (
-            <SeriesTimeline seriesId={meta.series_id || String(appId)} currentAppId={appId} meta={meta} />
+            <SeriesTimeline seriesId={meta.series_id || String(appId)} currentAppId={appId} meta={meta} liveRaised={raised} />
           )}
 
           {meta.website_url && (
