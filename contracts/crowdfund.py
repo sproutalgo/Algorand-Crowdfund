@@ -468,9 +468,9 @@ def approval_program():
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum:          TxnType.Payment,
-            TxnField.receiver:           creator,
+            TxnField.receiver:           admin,
             TxnField.amount:             Int(0),
-            TxnField.close_remainder_to: creator,
+            TxnField.close_remainder_to: admin,
             TxnField.fee:                Int(0),
         }),
         InnerTxnBuilder.Submit(),
