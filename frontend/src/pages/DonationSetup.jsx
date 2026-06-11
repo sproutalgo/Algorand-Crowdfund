@@ -28,7 +28,7 @@ export default function DonationSetup() {
   if (!appId || !meta) return null
 
   const appAddress = (() => {
-    try { return algosdk.getApplicationAddress(Number(appId)) } catch { return '' }
+    try { return algosdk.getApplicationAddress(Number(appId)).toString() } catch { return '' }
   })()
 
   const hue = categoryHue(meta.category)
