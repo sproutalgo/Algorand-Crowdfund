@@ -415,7 +415,7 @@ export default function CreateProject() {
               </div>
               <div className="form-grid">
                 <div className="field">
-                  <label>Funding goal (ALGO) *</label>
+                  <label>This milestone's funding goal (ALGO) *</label>
                   <input className="input no-spin" type="text" inputMode="numeric" placeholder="10000" value={form.goalAlgo} onChange={onlyInt('goalAlgo')} />
                   {goal > 0 && goal < MIN_GOAL_ALGO && (
                     <span className="field-hint" style={{ color: 'var(--danger)' }}>Minimum goal is {MIN_GOAL_ALGO} ALGO.</span>
