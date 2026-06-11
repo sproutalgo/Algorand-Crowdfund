@@ -181,13 +181,12 @@ export default function Home() {
               Live on Algorand Testnet
             </span>
             <h1 style={{ marginTop: 22 }}>
-              Back projects you believe in.<br />
-              Tokens if they fund — <span className="accent">every ALGO back</span> if they don't.
+              Algorand's own — <span className="accent">grassroots</span> crowdfunding platform.<br />
+              Back projects you believe in.
             </h1>
             <p className="hero-sub">
-              Refunds are guaranteed by the smart contract, not a promise — if a campaign
-              misses its goal, you claim yours back in one click. Sprout is grassroots
-              crowdfunding for the Algorand ecosystem.
+              Refunds are guaranteed by the smart contract — if a campaign
+              misses its goal, you claim yours back in one click. 
             </p>
             <div className="hero-actions">
               <a href="#explore-grid" className="btn btn-primary btn-lg">
