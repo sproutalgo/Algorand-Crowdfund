@@ -156,27 +156,35 @@ export default function CreateProject() {
 
       const validPlanned = plannedMilestones.filter(m => m.title.trim())
 
-      await registerProject({
-        address: activeAddress, appId: newAppId,
-        meta: {
-          name: form.name, tagline: form.tagline, description: form.description,
-          category: form.category, websiteUrl: form.websiteUrl,
-          tokenName: '', goalMicro, ratePerAlgo: rateArg,
-          highlights: form.highlights.filter(h => h.trim()),
-          isDonation,
-          seriesId,
-          seriesGoalMicro:
-            seriesId && Number(seriesTotalGoal) >= goal && Number(seriesTotalGoal) > 0
-              ? Math.round(Number(seriesTotalGoal) * 1_000_000)
-              : null,
-          milestoneNumber,
-          milestoneTitle:       milestoneTitle || null,
-          milestoneDescription: milestoneDesc  || null,
-          plannedMilestones:    validPlanned.length > 0 ? validPlanned : null,
-        },
-      })
+      const registrationMeta = {
+        name: form.name, tagline: form.tagline, description: form.description,
+        category: form.category, websiteUrl: form.websiteUrl,
+        tokenName: '', goalMicro, ratePerAlgo: rateArg,
+        highlights: form.highlights.filter(h => h.trim()),
+        isDonation,
+        seriesId,
+        seriesGoalMicro:
+          seriesId && Number(seriesTotalGoal) >= goal && Number(seriesTotalGoal) > 0
+            ? Math.round(Number(seriesTotalGoal) * 1_000_000)
+            : null,
+        milestoneNumber,
+        milestoneTitle:       milestoneTitle || null,
+        milestoneDescription: milestoneDesc  || null,
+        plannedMilestones:    validPlanned.length > 0 ? validPlanned : null,
+      }
+
+      if (isDonation) {
+        // Donation campaigns must fund the escrow before being registered and
+        // made visible. Hand off to the intermediate setup page which sends the
+        // 0.4 ALGO payment and only then calls registerProject with isDonation: true.
+        addToast(`Deployed! App ID: ${newAppId} — one more step to go live.`, 'success', 5000)
+        navigate('/donate-setup', { state: { appId: newAppId, meta: registrationMeta } })
+        return
+      }
+
+      await registerProject({ address: activeAddress, appId: newAppId, meta: registrationMeta })
       addToast(`Deployed! App ID: ${newAppId}`, 'success')
-      if (!isDonation) addToast('Go to My garden → Set up contract to fund the token pool.', 'info', 8000)
+      addToast('Go to My garden → Set up contract to fund the token pool.', 'info', 8000)
       navigate('/my-projects')
     } catch (e) {
       console.error(e)

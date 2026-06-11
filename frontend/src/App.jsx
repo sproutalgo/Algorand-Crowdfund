@@ -12,6 +12,7 @@ import FAQ          from './pages/FAQ'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms         from './pages/Terms'
 import DemoProject   from './pages/DemoProject'
+import DonationSetup from './pages/DonationSetup'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/project/demo" element={<DemoProject />} />
             <Route path="/project/:appId" element={<ProjectDetail />} />
             <Route path="/create" element={<CreateProject />} />
+            <Route path="/donate-setup" element={<DonationSetup />} />
             <Route path="/my-projects" element={<MyProjects />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/cleanup" element={<CleanupWallet />} />
