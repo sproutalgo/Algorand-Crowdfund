@@ -189,12 +189,12 @@ bnz main_l21
 itxn_begin
 int pay
 itxn_field TypeEnum
-byte "creator"
+byte "admin"
 app_global_get
 itxn_field Receiver
 int 0
 itxn_field Amount
-byte "creator"
+byte "admin"
 app_global_get
 itxn_field CloseRemainderTo
 int 0
@@ -827,17 +827,22 @@ txna ApplicationArgs 0
 ==
 assert
 gtxn 1 Amount
-txna ApplicationArgs 2
+txna ApplicationArgs 1
 btoi
-int 0
-==
+txna ApplicationArgs 3
+btoi
+*
+int 100000
+/
+int 10000000
+<
 bnz main_l43
 txna ApplicationArgs 1
 btoi
 txna ApplicationArgs 3
 btoi
 *
-int 10000
+int 100000
 /
 main_l42:
 >=
@@ -897,24 +902,5 @@ app_global_put
 int 1
 return
 main_l43:
-txna ApplicationArgs 1
-btoi
-txna ApplicationArgs 3
-btoi
-*
-int 10000
-/
-int 10000000
-<
-bnz main_l45
-txna ApplicationArgs 1
-btoi
-txna ApplicationArgs 3
-btoi
-*
-int 10000
-/
-b main_l42
-main_l45:
 int 10000000
 b main_l42

@@ -10,7 +10,7 @@ async function getSp(fee = 1000) {
 /**
  * Deploy a new crowdfunding application as a grouped transaction pair:
  * [0] ApplicationCreate
- * [1] Payment of listing fee from creator to admin (goal × days / 10,000)
+ * [1] Payment of listing fee from creator to admin (goal × days / 100,000, min 10 ALGO)
  *
  * numGlobalInts = 10:
  *   goal, rate, deadline, days, asa_id, raised,
@@ -34,13 +34,11 @@ export async function buildCreateAppTxnGroup({
   const adminBytes = algosdk.decodeAddress(adminAddress).publicKey
   const days       = Number(durationDays)
 
-  // Listing fee: 0.01% of goal per day = goal × days / 10,000
-  const rawListingFee = Math.floor((goalMicroAlgos * days) / 10_000)
-  // Donation campaigns (rate == 0) have a minimum listing fee of 10 ALGO
-  const MIN_DONATION_FEE = 10_000_000
-  const listingFee = rateAsaPerAlgo === 0
-    ? Math.max(rawListingFee, MIN_DONATION_FEE)
-    : rawListingFee
+  // Listing fee: 0.001% of goal per day = goal × days / 100,000
+  const rawListingFee = Math.floor((goalMicroAlgos * days) / 100_000)
+  // Minimum listing fee is 10 ALGO, for all campaigns
+  const MIN_LISTING_FEE = 10_000_000
+  const listingFee = Math.max(rawListingFee, MIN_LISTING_FEE)
 
   const appCreateTxn = algosdk.makeApplicationCreateTxnFromObject({
     sender,

@@ -58,8 +58,8 @@ from pyteal import *
 # - "contrib": microAlgos contributed (zeroed when the investor finalizes/refunds)
 #
 # FEE STRUCTURE:
-# - Listing fee: goal × days / 10,000 (0.01%/day), paid upfront to admin at
-#   deployment. Non-refundable. Never enters the contract.
+# - Listing fee: goal × days / 100,000 (0.001%/day), minimum 10 ALGO, paid
+#   upfront to admin at deployment. Non-refundable. Never enters the contract.
 # - Success fee: taken as the REMAINDER swept to admin at the ALGO close, i.e.
 #   roughly 4% of goal less any inner-txn fees. Not a fixed amount.
 #
@@ -109,17 +109,14 @@ def approval_program():
     # Args: [0]=admin(32 bytes), [1]=goal(microAlgos), [2]=rate, [3]=days(1-100)
     # Group: [0]=ApplicationCreate, [1]=Payment(listing_fee) from creator to admin
     # rate == 0 signals a donation campaign (no token distribution).
-    # Donation campaigns have a minimum listing fee of 10 ALGO regardless of goal/days.
+    # All campaigns have a minimum listing fee of 10 ALGO regardless of goal/days.
     days_arg         = Btoi(Txn.application_args[3])
     goal_arg         = Btoi(Txn.application_args[1])
     rate_arg         = Btoi(Txn.application_args[2])
-    listing_fee      = (goal_arg * days_arg) / Int(10_000)
-    # Donation campaigns: minimum listing fee is 10 ALGO (10_000_000 microAlgos)
+    listing_fee      = (goal_arg * days_arg) / Int(100_000)
+    # Minimum listing fee is 10 ALGO (10_000_000 microAlgos), for all campaigns
     MIN_LISTING_FEE  = Int(10_000_000)
-    effective_listing_fee = If(rate_arg == Int(0),
-        If(listing_fee < MIN_LISTING_FEE, MIN_LISTING_FEE, listing_fee),
-        listing_fee
-    )
+    effective_listing_fee = If(listing_fee < MIN_LISTING_FEE, MIN_LISTING_FEE, listing_fee)
     deadline_rounds  = Global.round() + (days_arg * ROUNDS_PER_DAY)
     admin_arg        = Txn.application_args[0]
 

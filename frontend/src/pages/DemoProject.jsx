@@ -26,7 +26,7 @@ Our mission is to make it easy for anyone building on Algorand to raise funds tr
     image_url:   '',
     highlights:  [
       'Fully non-custodial — funds held in audited smart contracts, never by the platform.',
-      'Transparent fee structure — 0.01% listing fee per day, 4% success fee on funded campaigns only.',
+      'Transparent fee structure — 0.001% listing fee per day (min 10 ALGO), 4% success fee on funded campaigns only.',
       'Built for Algorand — instant finality, sub-cent fees, carbon-neutral infrastructure.',
     ],
   },

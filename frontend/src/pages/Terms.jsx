@@ -171,9 +171,10 @@ export default function Terms() {
       <Section n={9} title="Fees">
         <P>
           <strong>Listing fee:</strong> Creators pay a non-refundable listing fee at the time
-          of campaign deployment, calculated as 0.01% of the funding goal per day of campaign
-          duration. This fee is paid directly to Sprout Ventures LLC at deployment and is not
-          held in the smart contract. It is non-refundable regardless of campaign outcome.
+          of campaign deployment, calculated as 0.001% of the funding goal per day of campaign
+          duration, subject to a minimum of 10 ALGO. This fee is paid directly to Sprout
+          Ventures LLC at deployment and is not held in the smart contract. It is
+          non-refundable regardless of campaign outcome.
         </P>
         <P>
           <strong>Success fee:</strong> A 4% fee on the funded goal amount is retained in the

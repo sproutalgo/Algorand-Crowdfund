@@ -36,7 +36,7 @@ const MIN_DAYS        = 1
 const MAX_DAYS        = 100
 const SUCCESS_FEE_PCT = 4
 const ROUNDS_PER_DAY  = 86400 / 3.3
-const MIN_DONATION_LISTING_FEE = 10 // ALGO
+const MIN_LISTING_FEE_ALGO = 10 // ALGO, applies to all campaigns
 
 export default function CreateProject() {
   const navigate    = useNavigate()
@@ -80,11 +80,11 @@ export default function CreateProject() {
   const durDays = Number(form.durationDays) || 0
   const durRounds = Math.round(durDays * ROUNDS_PER_DAY)
 
-  // Listing fee — donation campaigns have a minimum of 10 ALGO
-  const rawListingFee = goal && durDays ? (goal * durDays) / 10_000 : 0
-  const listingFeeAlgo = isDonation
-    ? Math.max(rawListingFee, MIN_DONATION_LISTING_FEE).toFixed(3)
-    : rawListingFee > 0 ? rawListingFee.toFixed(3) : null
+  // Listing fee — all campaigns have a minimum of 10 ALGO
+  const rawListingFee = goal && durDays ? (goal * durDays) / 100_000 : 0
+  const listingFeeAlgo = goal && durDays
+    ? Math.max(rawListingFee, MIN_LISTING_FEE_ALGO).toFixed(3)
+    : null
   const successFeeAlgo  = goal ? (goal * SUCCESS_FEE_PCT / 100).toFixed(2) : null
   const tokensNeeded    = !isDonation && goal && rate ? (goal * rate).toLocaleString() : null
 
@@ -263,7 +263,7 @@ export default function CreateProject() {
                   </div>
                   {isDonation && (
                     <span className="field-hint" style={{ marginTop: 8 }}>
-                      Donation campaigns have a minimum listing fee of {MIN_DONATION_LISTING_FEE} ALGO. Backers contribute ALGO and receive nothing in return — pure fundraising.
+                      Donation campaigns have a minimum listing fee of {MIN_LISTING_FEE_ALGO} ALGO, same as all campaigns. Backers contribute ALGO and receive nothing in return — pure fundraising.
                     </span>
                   )}
                 </div>
@@ -466,7 +466,6 @@ export default function CreateProject() {
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
                           ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~3.3 seconds each). Displayed days are approximate.`
                           : ''}
-                        {isDonation && ` Donation campaigns have a minimum listing fee of ${MIN_DONATION_LISTING_FEE} ALGO.`}
                       </span>
                   }
                 </div>

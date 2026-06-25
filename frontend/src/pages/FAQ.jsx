@@ -41,7 +41,7 @@ const SECTIONS = [
     items: [
       {
         q: 'What does it cost to launch a campaign?',
-        a: 'There is a 0.4 ALGO minimum balance payment made during setup to fund the contract account — this covers Algorand network requirements. Additionally, you pay a non-refundable listing fee at deployment, calculated as 0.01% of your funding goal per day of campaign duration. For example, a 10,000 ALGO campaign listed for 30 days costs 30 ALGO. If the campaign fails, you lose only the listing fee — no additional penalty is imposed and backers receive full refunds.',
+        a: 'There is a 0.4 ALGO minimum balance payment made during setup to fund the contract account — this covers Algorand network requirements. Additionally, you pay a non-refundable listing fee at deployment, calculated as 0.001% of your funding goal per day of campaign duration, with a minimum of 10 ALGO. For example, a 50,000 ALGO campaign listed for 30 days costs 15 ALGO; smaller or shorter campaigns pay the 10 ALGO minimum instead. If the campaign fails, you lose only the listing fee — no additional penalty is imposed and backers receive full refunds.',
       },
       {
         q: 'When do I receive my ALGO?',
