@@ -1,2 +1,6 @@
 frontend/.env
 frontend/dist
+backend/.env
+**/__pycache__/
+*.pyc
+ 
