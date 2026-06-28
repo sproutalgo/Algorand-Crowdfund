@@ -798,9 +798,20 @@ input.no-spin { -moz-appearance: textfield; }
   .demo-strip { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
   .grid-cards, .hiw { grid-template-columns: 1fr; }
   .nav-links { display: none; }
-  .hamburger { display: flex; }
+  .hamburger { display: flex; flex-shrink: 0; }
   .form-grid { grid-template-columns: 1fr; }
   .filters-end { margin-left: 0; }
+
+  /* Prevent the nav bar from overflowing horizontally on mobile.
+     "Launch a project", the theme toggle, and the wallet button all
+     have equivalents inside .mobile-nav (the hamburger dropdown), so
+     they're hidden here to avoid duplication and keep the hamburger
+     reachable without side-scrolling. */
+  .nav-inner { gap: 10px; padding: 0 16px; overflow-x: hidden; }
+  .nav-cta { display: none; }
+  .nav-inner .theme-toggle { display: none; }
+  .nav-inner .wallet,
+  .nav-inner .btn-ghost.btn-sm { display: none; }
 }
 
 /* ── Wallet connect modal ── */
