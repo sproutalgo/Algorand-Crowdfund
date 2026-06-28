@@ -561,7 +561,7 @@ input.no-spin { -moz-appearance: textfield; }
 .fund-panel { position: sticky; top: 92px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
 .fund-big { font-size: 38px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
 .fund-of { font-size: 14px; color: var(--text-faint); margin-top: 8px; }
-.fund-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.fund-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
 .fund-meta .stat-val { font-size: 21px; }
 .contrib-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; }
 .amt-input {
