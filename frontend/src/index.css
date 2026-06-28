@@ -798,6 +798,7 @@ input.no-spin { -moz-appearance: textfield; }
   .trust-strip-inner { padding: 13px 18px; gap: 16px 20px; }
   .demo-strip { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
   .grid-cards, .hiw { grid-template-columns: 1fr; }
+  .hero-featured, .first-wave { margin-bottom: 28px; }
   .nav-links { display: none; }
   .hamburger { display: flex; flex-shrink: 0; }
   .form-grid { grid-template-columns: 1fr; }
