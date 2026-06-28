@@ -794,22 +794,13 @@ input.no-spin { -moz-appearance: textfield; }
 }
 @media (max-width: 640px) {
   .wrap { padding: 0 18px; }
-  .trust-strip-inner { padding: 13px 18px; gap: 10px 20px; }
+  .trust-strip-inner { padding: 13px 18px; gap: 16px 20px; }
+  .demo-strip { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
   .grid-cards, .hiw { grid-template-columns: 1fr; }
   .nav-links { display: none; }
-  .hamburger { display: flex; flex-shrink: 0; }
+  .hamburger { display: flex; }
   .form-grid { grid-template-columns: 1fr; }
   .filters-end { margin-left: 0; }
-
-  /* Prevent the nav bar from overflowing horizontally on mobile.
-     "Launch a project" and "Connect wallet" already have equivalents
-     inside .mobile-nav, so they're hidden here to avoid duplication
-     and to keep the hamburger reachable without side-scrolling. */
-  .nav-inner { gap: 10px; padding: 0 16px; overflow-x: hidden; }
-  .nav-cta { display: none; }
-  .nav-inner .theme-toggle { display: none; }
-  .nav-inner .wallet,
-  .nav-inner .btn-ghost.btn-sm { display: none; }
 }
 
 /* ── Wallet connect modal ── */
