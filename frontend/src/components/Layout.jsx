@@ -141,7 +141,27 @@ export default function Layout({ children }) {
               {theme === 'dark' ? <Icon.sun style={{ width: 15, height: 15 }} /> : <Icon.moon style={{ width: 15, height: 15 }} />}
               {theme === 'dark' ? 'Light theme' : 'Dark theme'}
             </button>
-            {!activeAddress && (
+            {activeAddress ? (
+              <>
+                <div className="mobile-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} /> {shortAddr(activeAddress)}
+                </div>
+                <button
+                  className="mobile-nav-link"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+                  onClick={() => { navigator.clipboard.writeText(activeAddress); setMobileOpen(false) }}
+                >
+                  <Icon.copy style={{ width: 15, height: 15 }} /> Copy address
+                </button>
+                <button
+                  className="mobile-nav-link danger"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+                  onClick={() => { handleDisconnect(); setMobileOpen(false) }}
+                >
+                  <Icon.refund style={{ width: 15, height: 15 }} /> Disconnect
+                </button>
+              </>
+            ) : (
               <button className="btn btn-primary btn-block" style={{ marginTop: 8 }} onClick={() => { setMobileOpen(false); setWalletOpen(true) }}>
                 Connect wallet
               </button>
