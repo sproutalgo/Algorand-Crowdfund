@@ -1,13 +1,11 @@
 from pyteal import *
 
-# Crowdfunding App (stateful, smart-contract account) — FIXED VERSION
+# Crowdfunding App (stateful, smart-contract account)
 #
-# This is a security-hardened rewrite. Key design properties:
+# Key design properties:
 #
 #   1. Single monotonic counter: `raised` only ever increases and is only ever
-#      compared against `goal`. There is no liability counter that an untrusted
-#      action could desynchronize — closing logic never depends on a running
-#      total that ClearState could corrupt.
+#      compared against `goal`. 
 #
 #   2. Sticky outcome: success is determined ONLY by `funded_round > 0`
 #      (set once, never cleared). Failure is `funded_round == 0 AND
@@ -20,7 +18,7 @@ from pyteal import *
 #
 #   4. All inner transactions set fee: Int(0) explicitly and require the
 #      caller's outer transaction to cover pooled fees. Inner-txn fees can
-#      no longer silently drain the app account or the admin's fee.
+#      not silently drain the app account or the admin's fee.
 #
 #   5. setup is gated before the deadline and before any contribution.
 #
