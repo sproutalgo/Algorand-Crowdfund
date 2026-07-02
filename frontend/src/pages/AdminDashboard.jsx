@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       }
       await signAndSend(signTransactions, [(await buildAdminCancelTxn({ sender: activeAddress, appId })).toByte()])
       await updateStatus({ address: activeAddress, appId,  flags: { is_cancelled: true } })
-      addToast('Project cancelled. Investors can now claim refunds from the project page, or use "Process refunds" below.', 'success', 6000)
+      addToast('Project cancelled. Backers can now claim refunds from the project page, or use "Process refunds" below.', 'success', 6000)
       setProjects(prev => prev.map(p => p.id === appId ? { ...p, meta: { ...p.meta, is_cancelled: true } } : p))
     } catch (e) { addToast(e?.message || 'Cancel failed', 'error') }
     finally { setActioningId(null) }
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
     } catch (e) {
       const msg = e?.message || ''
       if (msg.includes('pc=598') || msg.includes('||; &&')) {
-        addToast('Grace period has not yet expired. Investors still have time to claim their tokens.', 'error', 8000)
+        addToast('Grace period has not yet expired. Backers still have time to claim their tokens.', 'error', 8000)
       } else {
         addToast(msg || 'Settle failed', 'error')
       }

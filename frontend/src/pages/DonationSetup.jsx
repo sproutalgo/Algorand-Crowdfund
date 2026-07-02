@@ -63,7 +63,7 @@ export default function DonationSetup() {
       })
 
       setStatus('done')
-      addToast('Your donation campaign is live!', 'success')
+      addToast('Your contribution campaign is live!', 'success')
       // Small delay so the success state is visible before navigating
       setTimeout(() => navigate(`/project/${appId}`), 1800)
     } catch (e) {
@@ -158,7 +158,7 @@ export default function DonationSetup() {
                 padding: '8px 10px', background: 'var(--surface-2)',
                 borderRadius: 'var(--r-sm)', lineHeight: 1.5,
               }}>
-                Donation campaign — backers contribute ALGO, no tokens distributed.
+                Contribution campaign — backers contribute ALGO, no token distributed.
               </div>
             </div>
           </div>

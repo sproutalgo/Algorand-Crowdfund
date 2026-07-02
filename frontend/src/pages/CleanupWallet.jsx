@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { algodClient, signAndSend, shortAddr as shortAddrAlgo } from '../utils/algorand'
-import { fetchPublicProjects } from '../utils/api'
+
+
 import { buildClearStateTxn, buildAsaCloseTxn } from '../utils/transactions'
 import { useToast } from '../context/ToastContext'
 import { Icon, IdTag, shortAddr } from '../components/UI'
@@ -305,7 +306,7 @@ export default function CleanupWallet() {
                       )}
                       {isDonationFunded && contrib > 0 && (
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                          Donation campaign — your contribution has already been received by the creator.
+                          Contribution campaign — your contribution has already been received by the creator.
                         </div>
                       )}
                     </div>

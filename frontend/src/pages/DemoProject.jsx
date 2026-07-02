@@ -17,7 +17,7 @@ const DEMO = {
     tagline:     'The grassroots Algorand crowdfunding platform.',
     description: `Sprout is a non-custodial crowdfunding platform built on the Algorand blockchain. We connect project creators with the community capital they need to bring their ideas to life.
 
-Every campaign on Sprout is backed by a fully audited smart contract — your funds are never held by us. Contributions are locked in the contract and returned in full if the campaign doesn't reach its goal.
+Every campaign on Sprout is backed by a self contained smart contract — your funds are never held by us. Contributions are locked in the contract and returned in full if the campaign doesn't reach its goal.
 
 Our mission is to make it easy for anyone building on Algorand to raise funds transparently, with real on-chain accountability and a community of backers who believe in the ecosystem.`,
     category:    'Infrastructure',

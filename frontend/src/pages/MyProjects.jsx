@@ -334,7 +334,7 @@ export default function MyProjects() {
                   {needsSetup && !p.meta?.is_donation
                     ? <button className="btn btn-primary btn-sm" onClick={() => openSetup(p)}>Set up contract</button>
                     : needsSetup && p.meta?.is_donation
-                    ? <span className="faint" style={{ fontSize: 12 }}>Donation — no setup needed</span>
+                    ? <span className="faint" style={{ fontSize: 12 }}>Contribution — no setup needed</span>
                     : <Link to={`/project/${p.id}`} className="btn btn-ghost btn-sm">View campaign</Link>
                   }
                   {p.meta?.milestone_title && !p.meta?.milestone_completed_at && (status === 'distributed' || status === 'funded') && (

@@ -49,7 +49,7 @@ export default function ProjectCard({ project, currentRound = 0 }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span className="badge">{meta.category || 'Other'}</span>
           {meta.is_donation && (
-            <span className="badge badge-accent">Donation</span>
+            <span className="badge badge-accent">Contribution</span>
           )}
           <StatusBadge status={status} />
         </div>

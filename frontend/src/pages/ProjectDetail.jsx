@@ -487,7 +487,7 @@ export default function ProjectDetail() {
           {/* Donation campaign badge */}
           {meta.is_donation && (
             <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)' }}>
-              <strong style={{ color: 'var(--text)' }}>Donation campaign</strong> — Backers contribute ALGO to support this project. No tokens are distributed.
+              <strong style={{ color: 'var(--text)' }}>Contribution campaign</strong> — Backers contribute ALGO to support this project. No token is distributed.
             </div>
           )}
 
@@ -544,7 +544,7 @@ export default function ProjectDetail() {
                 </div>
                 <p className="field-hint" style={{ marginTop: 7 }}>
                   {isDistributed
-                    ? 'This campaign reached its goal. All parties have claimed their shares.'
+                    ? 'This campaign reached its goal. All parties have claimed their allocations.'
                     : 'This campaign reached its goal.'}
                 </p>
 
@@ -566,7 +566,7 @@ export default function ProjectDetail() {
                 )}
                 {isSettler && creatorClaimed && !adminClaimed && (
                   <p className="field-hint" style={{ marginTop: 8 }}>
-                    Creator has claimed. Close the contract below once investors have claimed their tokens.
+                    Creator has claimed. Close the contract below once backers have claimed their tokens.
                   </p>
                 )}
 
@@ -583,7 +583,7 @@ export default function ProjectDetail() {
                 )}
                 {canClaim && meta.is_donation && (
                   <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
-                    Thank you for backing this campaign. Donation campaigns do not distribute tokens.
+                    Thank you for backing this campaign. Contribution campaigns do not distribute tokens.
                   </div>
                 )}
 
