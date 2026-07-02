@@ -283,22 +283,23 @@ export default function Home() {
               {c} <span className="n">{catCounts[c] || 0}</span>
             </button>
           ))}
-          <div className="filters-end">
-            <button
-              className={`chip${showDonations ? ' active' : ''}`}
-              onClick={() => setShowDonations(s => !s)}
-              aria-pressed={showDonations}
-            >
-              <Icon.heart /> {showDonations ? 'Hide Contribution Campaigns' : 'Show Contribution Campaigns'}
-            </button>
-            <button
-              className={`chip${showCancelled ? ' active' : ''}`}
-              onClick={() => setShowCancelled(s => !s)}
-              aria-pressed={showCancelled}
-            >
-              {showCancelled ? 'Hide Cancelled' : 'Show Cancelled'}
-            </button>
-          </div>
+        </div>
+
+        <div className="filters-end" style={{ marginBottom: 24 }}>
+          <button
+            className={`chip${showDonations ? ' active' : ''}`}
+            onClick={() => setShowDonations(s => !s)}
+            aria-pressed={showDonations}
+          >
+            <Icon.heart /> {showDonations ? 'Hide Contribution Campaigns' : 'Show Contribution Campaigns'}
+          </button>
+          <button
+            className={`chip${showCancelled ? ' active' : ''}`}
+            onClick={() => setShowCancelled(s => !s)}
+            aria-pressed={showCancelled}
+          >
+            {showCancelled ? 'Hide Cancelled' : 'Show Cancelled'}
+          </button>
         </div>
 
         {loading ? (
