@@ -242,8 +242,8 @@ export default function CreateProject() {
                   <label>Campaign type</label>
                   <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
                     {[
-                      { v: 'token',    l: 'Token launch', desc: 'Backers receive project tokens' },
-                      { v: 'donation', l: 'Donation',     desc: 'Pure fundraise, no tokens' },
+                      { v: 'token',    l: 'Reward campaign',       desc: 'Backers receive a project token' },
+                      { v: 'donation', l: 'Contribution campaign', desc: 'Support only, no token' },
                     ].map(({ v, l, desc }) => (
                       <button
                         key={v}
@@ -263,7 +263,7 @@ export default function CreateProject() {
                   </div>
                   {isDonation && (
                     <span className="field-hint" style={{ marginTop: 8 }}>
-                      Donation campaigns have a minimum listing fee of {MIN_LISTING_FEE_ALGO} ALGO, same as all campaigns. Backers contribute ALGO and receive nothing in return — pure fundraising.
+                      Contribution campaigns have a minimum listing fee of {MIN_LISTING_FEE_ALGO} ALGO. Backers contribute ALGO to support the project and receive no token in return.
                     </span>
                   )}
                 </div>
@@ -357,7 +357,7 @@ export default function CreateProject() {
                 <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
                   <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Campaign series (optional)</h4>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.5 }}>
-                    Link this campaign to a series of milestones. Investors will see your track record across all campaigns in the series.
+                    Link this campaign to a series of milestones. Backers will see your track record across all campaigns in the series.
                   </p>
 
                   <div className="field" style={{ marginBottom: 12 }}>
@@ -441,7 +441,7 @@ export default function CreateProject() {
                     <label>Token rate (per ALGO) *</label>
                     <input className="input no-spin" type="text" inputMode="numeric" placeholder="1000" value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
                     <span className="field-hint">
-                      How many tokens each ALGO contribution receives. Enter the number of display tokens (e.g. 1 token per ALGO = enter 1). The rate is adjusted automatically for token decimals during setup.
+                      How many tokens are allocated per ALGO contributed. Enter the number of display tokens (e.g. 1 token per ALGO = enter 1). The rate is adjusted automatically for token decimals during setup.
                     </span>
                   </div>
                 )}
@@ -496,7 +496,7 @@ export default function CreateProject() {
                   <h3 style={{ fontSize: 26 }}>Ready to deploy</h3>
                   <p className="muted" style={{ marginTop: 12, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
                     <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {goal.toLocaleString()} ALGO over {durDays} days
-                    {!isDonation ? ` at ${rate} tokens per ALGO` : ' as a donation campaign'}.
+                    {!isDonation ? ` at ${rate} tokens per ALGO` : ' as a contribution campaign'}.
                     Listing fee: {listingFeeAlgo} ALGO paid at deploy.
                     Success fee: {successFeeAlgo} ALGO (4%) if funded.
                   </p>
@@ -560,7 +560,7 @@ export default function CreateProject() {
           <div className="card summary-card" style={{ position: 'static' }}>
             <h4>Deployment summary</h4>
             {[
-              { l: 'Campaign type',     v: isDonation ? 'Donation' : 'Token launch' },
+              { l: 'Campaign type',     v: isDonation ? 'Contribution campaign' : 'Reward campaign' },
               { l: 'Funding goal',      v: goal ? `${goal.toLocaleString()} ALGO` : '—' },
               ...(!isDonation ? [{ l: 'Token rate', v: rate ? `${rate} tokens / ALGO` : '—' }] : []),
               { l: 'Duration',          v: durDays >= MIN_DAYS && durDays <= MAX_DAYS ? `${durDays} days` : '—' },
