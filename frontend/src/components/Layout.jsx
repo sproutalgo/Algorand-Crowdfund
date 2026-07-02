@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileOpen, setMobileOpen]   = useState(false)
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('sprout-theme') || 'light' } catch { return 'light' }
+    try { return localStorage.getItem('sprout-theme') || 'dark' } catch { return 'dark' }
   })
   const dropdownRef = useRef(null)
   const { activeAddress, wallets } = useWallet()
@@ -133,7 +133,35 @@ export default function Layout({ children }) {
               </Link>
             ))}
             <Link to="/create" className="mobile-nav-link" style={{ color: 'var(--accent)', fontWeight: 700 }}>Launch a project</Link>
-            {!activeAddress && (
+            <button
+              className="mobile-nav-link"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+              onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+            >
+              {theme === 'dark' ? <Icon.sun style={{ width: 15, height: 15 }} /> : <Icon.moon style={{ width: 15, height: 15 }} />}
+              {theme === 'dark' ? 'Light theme' : 'Dark theme'}
+            </button>
+            {activeAddress ? (
+              <>
+                <div className="mobile-nav-link" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} /> {shortAddr(activeAddress)}
+                </div>
+                <button
+                  className="mobile-nav-link"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+                  onClick={() => { navigator.clipboard.writeText(activeAddress); setMobileOpen(false) }}
+                >
+                  <Icon.copy style={{ width: 15, height: 15 }} /> Copy address
+                </button>
+                <button
+                  className="mobile-nav-link danger"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit' }}
+                  onClick={() => { handleDisconnect(); setMobileOpen(false) }}
+                >
+                  <Icon.refund style={{ width: 15, height: 15 }} /> Disconnect
+                </button>
+              </>
+            ) : (
               <button className="btn btn-primary btn-block" style={{ marginTop: 8 }} onClick={() => { setMobileOpen(false); setWalletOpen(true) }}>
                 Connect wallet
               </button>
@@ -153,8 +181,11 @@ export default function Layout({ children }) {
           <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             <Link to="/privacy" style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Privacy Policy</Link>
             <Link to="/terms"   style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Terms &amp; Conditions</Link>
-            <a href="https://developer.algorand.org" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--text-muted)' }}>
-              <Icon.globe style={{ width: 14, height: 14 }} /> Algorand Docs
+            <a href="https://x.com/SproutAlgo" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--text-muted)' }}>
+              <Icon.x style={{ width: 13, height: 13 }} /> X
+            </a>
+            <a href="https://discord.gg/5XPQhK7Kw" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--text-muted)' }}>
+              <Icon.discord style={{ width: 14, height: 14 }} /> Discord
             </a>
           </div>
         </div>

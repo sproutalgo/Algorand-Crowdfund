@@ -76,7 +76,7 @@ export default function DemoProject() {
         <span style={{ fontSize: 18 }}>🌱</span>
         <div>
           <strong style={{ color: 'var(--text)' }}>This is a demo campaign.</strong>
-          {' '}It shows how your project page will look to investors. No transactions are possible.
+          {' '}It shows how your project page will look to backers. No transactions are possible.
           {' '}<Link to="/create" style={{ color: 'var(--accent)' }}>Launch your own campaign →</Link>
         </div>
       </div>

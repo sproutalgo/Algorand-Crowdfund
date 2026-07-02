@@ -68,14 +68,22 @@ export default function Terms() {
         <P>
           The Service is a non-custodial, blockchain-based crowdfunding platform operated on the
           Algorand network. It allows campaign creators to deploy smart contracts to raise ALGO
-          in exchange for project tokens, and allows backers to contribute ALGO and claim tokens
-          or refunds in accordance with the terms of each individual smart contract.
+          from backers who wish to support their projects. Campaigns take one of two forms: a
+          Reward campaign, in which backers may receive a project token intended to represent
+          early access to or utility within what the creator builds; and a Contribution campaign,
+          in which no token is distributed and backers simply support the project. In all cases,
+          backers contribute ALGO and may claim tokens (where offered) or refunds in accordance
+          with the terms of each individual smart contract.
         </P>
         <P>
+          A project token, where offered, is not equity, a share, or any ownership interest in a
+          business, and is not a promise of profit, income, or financial return. Backers support
+          projects they believe in; they do not acquire an investment or ownership position.
           Sprout provides the interface and infrastructure for deploying and interacting
           with these smart contracts. Sprout does not hold, control, or have access to any
           user funds or private keys at any time. The Service is a technology platform, not a
-          financial or investment service.
+          financial or investment service, and nothing offered through it constitutes an offer
+          or sale of securities.
         </P>
       </Section>
 
@@ -88,6 +96,9 @@ export default function Terms() {
           '"Smart Contract" means the on-chain Algorand application deployed for each campaign.',
           '"Campaign" means a crowdfunding project deployed and managed through the Service.',
           '"Contribution" means ALGO deposited by a Backer into a Campaign smart contract.',
+          '"Reward Campaign" means a Campaign in which Backers may receive a Project Token.',
+          '"Contribution Campaign" means a Campaign in which no token is distributed to Backers.',
+          '"Project Token" means an Algorand Standard Asset distributed by a Reward Campaign, intended solely to represent early access to or utility within a Creator\'s project. A Project Token is not equity, a security, a share, or an ownership interest in any business, and confers no right to profit, income, dividends, or financial return.',
         ]} />
       </Section>
 
@@ -172,9 +183,9 @@ export default function Terms() {
         <P>
           <strong>Listing fee:</strong> Creators pay a non-refundable listing fee at the time
           of campaign deployment, calculated as 0.001% of the funding goal per day of campaign
-          duration, subject to a minimum of 10 ALGO. This fee is paid directly to Sprout
-          Ventures LLC at deployment and is not held in the smart contract. It is
-          non-refundable regardless of campaign outcome.
+          duration, subject to a minimum of 10 ALGO. This fee is paid directly to Sprout Ventures
+          LLC at deployment and is not held in the smart contract. It is non-refundable regardless
+          of campaign outcome.
         </P>
         <P>
           <strong>Success fee:</strong> A 4% fee on the funded goal amount is retained in the

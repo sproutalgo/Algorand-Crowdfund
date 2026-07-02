@@ -27,6 +27,8 @@ export const Icon = {
   lock:   (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.8"/><path d="M8 10.5V8a4 4 0 018 0v2.5" stroke="currentColor" strokeWidth="1.8"/></svg>,
   heart:  (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M12 20.5S3.5 15.4 3.5 9.3A4.8 4.8 0 0112 6.2a4.8 4.8 0 018.5 3.1c0 6.1-8.5 11.2-8.5 11.2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>,
   external: (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M14 4h6v6M20 4l-8.5 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M19 13.5V18a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  x:      (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M5 4l14 16M19 4L5 20" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"/></svg>,
+  discord: (p) => <svg viewBox="0 0 24 24" fill="none" {...p}><path d="M6 8.5c2-1 4-1.5 6-1.5s4 .5 6 1.5c1 2.3 1.3 5.6.5 8.5-1.6 1.3-3.4 2-5.2 2.2l-.7-1.4c1-.3 1.9-.7 2.7-1.3-1.7.7-3.5 1-5.3 1s-3.6-.3-5.3-1c.8.6 1.7 1 2.7 1.3l-.7 1.4C5 18.6 3.2 17.9 1.6 16.6c-.8-2.9-.5-6.2.5-8.5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><ellipse cx="9" cy="13" rx="1.1" ry="1.3" fill="currentColor"/><ellipse cx="15" cy="13" rx="1.1" ry="1.3" fill="currentColor"/></svg>,
 }
 
 // ── Brand ──────────────────────────────────────────────────────────────────────

@@ -4,27 +4,44 @@ import { Icon } from '../components/UI'
 
 const SECTIONS = [
   {
+    heading: 'Campaign Types',
+    items: [
+      {
+        q: 'What kinds of campaigns can I run or back?',
+        a: 'Sprout supports two kinds of campaigns. A Reward campaign gives backers a project token in return for their contribution — the token is intended to represent early access to, or utility within, what the creator is building. A Contribution campaign has no token at all: backers contribute ALGO to support a project they believe in and receive no token in return. Both types use the same non-custodial escrow and the same refund guarantee if the goal is missed.',
+      },
+      {
+        q: 'Are these tokens an investment or ownership stake?',
+        a: 'No. Tokens distributed through a Reward campaign are not equity, shares, or an ownership interest in any business, and they are not a promise of profit or financial return. Where a token is offered, it is intended as a means of early access to or interaction with what the creator builds. Backers are supporting a project they believe in — much like a rewards-based crowdfunding pledge — not buying into a business. Nothing on Sprout should be understood as an offer of securities or an investment product.',
+      },
+      {
+        q: 'What is the difference for me as a backer?',
+        a: 'In a Reward campaign, if the goal is met you can claim the project token allocated to your contribution. In a Contribution campaign, there is no token to claim — your ALGO simply supports the project once the goal is met. In both cases, if the goal is missed, you can claim a full refund of exactly what you contributed.',
+      },
+    ],
+  },
+  {
     heading: 'For Backers',
     items: [
       {
         q: 'Where is my money held while a campaign runs?',
-        a: 'In the campaign\'s own smart contract on Algorand — non-custodial escrow. Neither Sprout nor the creator can touch contributions while a campaign is live. If the goal is met, the contract releases the funds to the creator (minus the 4% success fee) and your tokens to you. If the goal is missed, the contract releases nothing to the creator, and every backer can claim a full refund.',
+        a: 'In the campaign\'s own smart contract on Algorand — non-custodial escrow. Neither Sprout nor the creator can touch contributions while a campaign is live. If the goal is met, the contract releases the funds to the creator (minus the 4% success fee), and for Reward campaigns it also releases your token to you. If the goal is missed, the contract releases nothing to the creator, and every backer can claim a full refund.',
       },
       {
         q: 'How do I back a project?',
-        a: 'Connect your Algorand wallet, opt into the campaign, and send ALGO before the funding deadline. Your contribution is held in the project\'s smart contract — no intermediary holds your funds at any point.',
+        a: 'Connect your Algorand wallet, opt into the campaign, and send ALGO before the funding deadline. Your contribution is held in the project\'s smart contract — no intermediary holds your funds at any point. This is the same whether you are backing a Reward campaign or a Contribution campaign.',
       },
       {
         q: 'What happens to my ALGO if the project doesn\'t reach its goal?',
-        a: 'If the campaign deadline passes without reaching the funding goal, you can claim a full refund directly from the project page. The contract will return exactly what you contributed.',
+        a: 'If the campaign deadline passes without reaching the funding goal, you can claim a full refund directly from the project page. The contract will return exactly what you contributed. This applies to both campaign types.',
       },
       {
-        q: 'How do I claim my tokens after a campaign succeeds?',
-        a: 'Once the funding goal is met, visit the project page and click "Claim tokens." The contract sends your token allocation directly to your wallet.',
+        q: 'How do I claim my token after a Reward campaign succeeds?',
+        a: 'Once the funding goal is met, visit the project page and click "Claim." The contract sends your token allocation directly to your wallet. Contribution campaigns have no token, so there is nothing to claim — your support is complete once the goal is reached.',
       },
       {
         q: 'What is the 6-month grace period?',
-        a: 'After a campaign ends (either by successfully reaching its goal or expiring), investors have 6 months to claim their tokens. This window exists because the contract cannot fully settle until all positions are resolved — the grace period gives every investor ample time to claim while ensuring the campaign can eventually close. After 6 months, in order to complete settlement, unclaimed tokens and ALGO will be permanently transferred to the platform — you will not be able to recover them after this point. Claim as soon as possible after a campaign ends.',
+        a: 'After a Reward campaign ends (either by reaching its goal or expiring), backers have 6 months to claim their token. This window exists because the contract cannot fully settle until all positions are resolved — the grace period gives every backer ample time to claim while ensuring the campaign can eventually close. After 6 months, in order to complete settlement, unclaimed tokens and ALGO will be permanently transferred to the platform — you will not be able to recover them after this point. Claim as soon as possible after a campaign ends.',
       },
       {
         q: 'Can I withdraw my contribution before the deadline?',
@@ -41,31 +58,31 @@ const SECTIONS = [
     items: [
       {
         q: 'What does it cost to launch a campaign?',
-        a: 'There is a 0.4 ALGO minimum balance payment made during setup to fund the contract account — this covers Algorand network requirements. Additionally, you pay a non-refundable listing fee at deployment, calculated as 0.001% of your funding goal per day of campaign duration, with a minimum of 10 ALGO. For example, a 50,000 ALGO campaign listed for 30 days costs 15 ALGO; smaller or shorter campaigns pay the 10 ALGO minimum instead. If the campaign fails, you lose only the listing fee — no additional penalty is imposed and backers receive full refunds.',
+        a: 'There is a 0.4 ALGO minimum balance payment made during setup to fund the contract account — this covers Algorand network requirements. Additionally, you pay a non-refundable listing fee at deployment, calculated as 0.001% of your funding goal per day of campaign duration, with a minimum of 10 ALGO. For example, a 50,000 ALGO campaign listed for 30 days costs 15 ALGO; smaller or shorter campaigns pay the 10 ALGO minimum instead. If the campaign fails, you lose only the listing fee — no additional penalty is imposed and backers receive full refunds. This fee structure is the same for both campaign types.',
       },
       {
         q: 'When do I receive my ALGO?',
-        a: 'As soon as your campaign reaches its funding goal you can claim your ALGO — you do not need to wait for investors to claim their tokens. Visit the project page and click "Claim ALGO." You receive the full goal amount minus the 4% platform success fee.',
+        a: 'As soon as your campaign reaches its funding goal you can claim your ALGO — for a Reward campaign, you do not need to wait for backers to claim their tokens. Visit the project page and click "Claim ALGO." You receive the full goal amount minus the 4% platform success fee.',
       },
       {
         q: 'What is the 4% success fee?',
-        a: 'A 4% fee on the funded goal amount is retained in the smart contract and paid to the platform upon successful campaign completion. This is deducted from your payout when you claim. There is no success fee on failed or cancelled campaigns.',
+        a: 'A 4% fee on the funded goal amount is retained in the smart contract and paid to the platform upon successful campaign completion. This is deducted from your payout when you claim. There is no success fee on failed or cancelled campaigns. It applies equally to Reward and Contribution campaigns.',
       },
       {
         q: 'How long can my campaign run?',
-        a: 'Campaigns can run between 1 and 100 days. Choose your duration carefully — the goal, rate, and duration are written to the smart contract at deployment and cannot be changed.',
+        a: 'Campaigns can run between 1 and 100 days. Choose your duration carefully — the goal, duration, and (for Reward campaigns) the token rate are written to the smart contract at deployment and cannot be changed.',
       },
       {
-        q: 'What tokens do I need to provide?',
-        a: 'During campaign setup you transfer the total token supply to the smart contract. The amount required is goal × rate. For example, a 100 ALGO goal at a rate of 10 tokens per ALGO requires 1,000 tokens transferred to the contract.',
+        q: 'Do I need to provide a token?',
+        a: 'Only for a Reward campaign. During setup you transfer the total token supply to the smart contract, based on your goal and the distribution rate you set. A Contribution campaign requires no token at all — you are simply raising ALGO in support of your project, with nothing distributed back to backers.',
       },
       {
         q: 'What happens if a campaign is cancelled?',
-        a: 'On rare occasions the platform may cancel a campaign that violates our terms — for example, projects that misrepresent their product, offer tokens with no legitimate utility, or impersonate existing projects. Investors can claim full refunds immediately after cancellation. The creator loses only the listing fee paid at deployment.',
+        a: 'On rare occasions the platform may cancel a campaign that violates our terms — for example, projects that misrepresent their product, offer a token with no legitimate utility, or impersonate existing projects. Backers can claim full refunds immediately after cancellation. The creator loses only the listing fee paid at deployment.',
       },
       {
         q: 'Can I change my funding goal or deadline after launch?',
-        a: 'No. The goal, rate, and duration are written to the smart contract at deployment and cannot be changed. Plan carefully before launching.',
+        a: 'No. The goal, duration, and (for Reward campaigns) the token rate are written to the smart contract at deployment and cannot be changed. Plan carefully before launching.',
       },
     ],
   },
