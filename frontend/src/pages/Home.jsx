@@ -289,14 +289,14 @@ export default function Home() {
               onClick={() => setShowDonations(s => !s)}
               aria-pressed={showDonations}
             >
-              <Icon.heart /> {showDonations ? 'Donations shown' : 'Donations hidden'}
+              <Icon.heart /> {showDonations ? 'Hide Contribution Campaigns' : 'Show Contribution Campaigns'}
             </button>
             <button
               className={`chip${showCancelled ? ' active' : ''}`}
               onClick={() => setShowCancelled(s => !s)}
               aria-pressed={showCancelled}
             >
-              {showCancelled ? 'Hiding nothing' : 'Show cancelled'}
+              {showCancelled ? 'Hide Cancelled' : 'Show Cancelled'}
             </button>
           </div>
         </div>
