@@ -74,10 +74,10 @@ from pyteal import *
 #   forfeits their tokens; the ASA remnant goes to the admin.
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-#GRACE_PERIOD_ROUNDS = Int(4_712_727)   # ~6 months at 3.3 s/block
-#ROUNDS_PER_DAY      = Int(26_057)      # 86400 / 3.3 rounded
-GRACE_PERIOD_ROUNDS = Int(10)      # was Int(4_712_727)
-ROUNDS_PER_DAY      = Int(10)      # was Int(26_057)
+#GRACE_PERIOD_ROUNDS = Int(5_580_866)   # ~6 months at 2.8 s/block
+#ROUNDS_PER_DAY      = Int(30_8577)      # 86400 / 2.8 rounded
+GRACE_PERIOD_ROUNDS = Int(10)      # was Int(5_580_866)
+ROUNDS_PER_DAY      = Int(10)      # was Int(30_857)
 MIN_DAYS            = Int(1)
 MAX_DAYS            = Int(100)
 MAX_GOAL            = Int(100_000_000_000_000)  # 100 million ALGO in microAlgos
