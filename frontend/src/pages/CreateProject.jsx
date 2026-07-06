@@ -35,7 +35,7 @@ const MAX_GOAL_ALGO   = 100_000_000
 const MIN_DAYS        = 1
 const MAX_DAYS        = 100
 const SUCCESS_FEE_PCT = 4
-const ROUNDS_PER_DAY  = 86400 / 3.3
+const ROUNDS_PER_DAY  = 86400 / 2.8
 const MIN_LISTING_FEE_ALGO = 10 // ALGO, applies to all campaigns
 
 export default function CreateProject() {
@@ -464,7 +464,7 @@ export default function CreateProject() {
                           ? ` Listing fee: ${listingFeeAlgo} ALGO.`
                           : ''}
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
-                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~3.3 seconds each). Displayed days are approximate.`
+                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~2.8 seconds each). Displayed days are approximate.`
                           : ''}
                       </span>
                   }
