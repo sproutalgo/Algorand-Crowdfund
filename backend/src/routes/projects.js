@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAdmin, requireSignature } from '../middleware/auth.js'
 import {
   getPublicProjects,
+  getPublicStats,
   getAllProjects,
   getProjectsByCreator,
   getProject,
@@ -35,6 +36,18 @@ router.get('/', async (req, res) => {
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Failed to fetch projects' })
+  }
+})
+
+// Platform-wide aggregate stats for the homepage hero (all projects, not paginated).
+// Declared before '/:appId' so "stats" isn't parsed as an appId.
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = await getPublicStats()
+    res.json(stats)
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to fetch stats' })
   }
 })
 
