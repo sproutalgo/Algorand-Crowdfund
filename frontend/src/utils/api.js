@@ -64,6 +64,14 @@ export async function fetchPublicProjects({ page = 1, pageSize = 50 } = {}) {
   return apiFetch(`/projects?page=${page}&pageSize=${pageSize}`)
 }
 
+/**
+ * Fetch platform-wide aggregate stats for the homepage hero.
+ * Returns { totalRaisedMicro, fundedCount } across all public projects.
+ */
+export async function fetchPublicStats() {
+  return apiFetch('/projects/stats')
+}
+
 export async function fetchProjectMeta(appId) {
   return apiFetch(`/projects/${appId}`)
 }
