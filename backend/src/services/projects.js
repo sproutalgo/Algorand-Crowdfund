@@ -38,6 +38,31 @@ export async function getPublicProjects({ page = 1, pageSize = 50 } = {}) {
 }
 
 /**
+ * Platform-wide aggregate stats for the homepage hero, computed across ALL
+ * public projects (not just the first page). Sums on_chain_raised and counts
+ * funded/distributed campaigns. Excludes hidden and on-chain-deleted rows.
+ * Returns { totalRaisedMicro, fundedCount }.
+ */
+export async function getPublicStats() {
+  const { data, error } = await supabasePublic
+    .from('projects')
+    .select('on_chain_raised, is_funded, is_distributed')
+    .or('is_hidden.is.null,is_hidden.eq.false')
+    .or('on_chain_deleted.is.null,on_chain_deleted.eq.false')
+
+  if (error) throw error
+
+  let totalRaisedMicro = 0
+  let fundedCount = 0
+  for (const p of data ?? []) {
+    totalRaisedMicro += Number(p.on_chain_raised ?? 0)
+    if (p.is_funded || p.is_distributed) fundedCount += 1
+  }
+
+  return { totalRaisedMicro, fundedCount }
+}
+
+/**
  * Get all projects regardless of status — for the admin dashboard.
  */
 export async function getAllProjects() {
