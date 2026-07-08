@@ -132,20 +132,31 @@ async function upsertOnChain(appId, { gs, deleted }, currentRound = 0) {
     if (!fundedRound) statusUpdate.is_refunded = true
   }
 
+  // on_chain_raised is a HISTORICAL value: once a funded campaign's contract
+  // is deleted on-chain, its raised amount can never be re-read. So on deletion
+  // we PRESERVE the last-synced value (by omitting the field from the update)
+  // rather than nulling it — this keeps completed campaigns counted in
+  // cumulative totals. All other on_chain_* fields are operational state and
+  // are still nulled on deletion. Note: syncAllProjects skips already-deleted
+  // rows, so the preserved value is written exactly once and never overwritten.
+  const update = {
+    on_chain_funded_round:    deleted ? null : Number(gs.funded_round    ?? 0),
+    on_chain_deadline:        deleted ? null : Number(gs.deadline        ?? 0),
+    on_chain_asa_id:          deleted ? null : Number(gs.asa_id          ?? 0),
+    on_chain_cancelled:       deleted ? null : cancelled,
+    on_chain_creator_claimed: deleted ? null : Boolean(Number(gs.creator_claimed ?? 0)),
+    on_chain_admin_claimed:   deleted ? null : Boolean(Number(gs.admin_claimed   ?? 0)),
+    on_chain_deleted:         deleted,
+    on_chain_synced_at:       new Date().toISOString(),
+    ...statusUpdate,
+  }
+  if (!deleted) {
+    update.on_chain_raised = Number(gs.raised ?? 0)
+  }
+
   const { error } = await supabase
     .from('projects')
-    .update({
-      on_chain_raised:          deleted ? null : Number(gs.raised          ?? 0),
-      on_chain_funded_round:    deleted ? null : Number(gs.funded_round    ?? 0),
-      on_chain_deadline:        deleted ? null : Number(gs.deadline        ?? 0),
-      on_chain_asa_id:          deleted ? null : Number(gs.asa_id          ?? 0),
-      on_chain_cancelled:       deleted ? null : cancelled,
-      on_chain_creator_claimed: deleted ? null : Boolean(Number(gs.creator_claimed ?? 0)),
-      on_chain_admin_claimed:   deleted ? null : Boolean(Number(gs.admin_claimed   ?? 0)),
-      on_chain_deleted:         deleted,
-      on_chain_synced_at:       new Date().toISOString(),
-      ...statusUpdate,
-    })
+    .update(update)
     .eq('app_id', Number(appId))
 
   if (error) throw error
