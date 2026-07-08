@@ -44,11 +44,15 @@ export async function getPublicProjects({ page = 1, pageSize = 50 } = {}) {
  * Returns { totalRaisedMicro, fundedCount }.
  */
 export async function getPublicStats() {
+  // Note: we intentionally do NOT filter on on_chain_deleted here.
+  // A successfully funded campaign's contract is typically closed/deleted
+  // on-chain after distribution, so on_chain_deleted=true is the signature
+  // of success — those rows must be counted in the traction totals.
+  // Hidden rows are still excluded (admin-hidden = intentionally suppressed).
   const { data, error } = await supabasePublic
     .from('projects')
     .select('on_chain_raised, is_funded, is_distributed')
     .or('is_hidden.is.null,is_hidden.eq.false')
-    .or('on_chain_deleted.is.null,on_chain_deleted.eq.false')
 
   if (error) throw error
 
