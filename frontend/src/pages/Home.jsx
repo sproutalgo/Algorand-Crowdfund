@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { algodClient, fetchOnChainBatch, gsFromCache } from '../utils/algorand'
 import { Link } from 'react-router-dom'
-import { fetchPublicProjects } from '../utils/api'
+import { fetchPublicProjects, fetchPublicStats } from '../utils/api'
 import ProjectCard from '../components/ProjectCard'
 import { SkeletonCard, Icon, Stat, deriveProjectStatus } from '../components/UI'
 
@@ -19,6 +19,7 @@ export default function Home() {
   const [page, setPage]             = useState(1)
   const [total, setTotal]           = useState(0)
   const [allProjects, setAllProjects] = useState([])
+  const [platformStats, setPlatformStats] = useState(null)
   const [currentRound, setCurrentRound] = useState(0)
 
   // Fetch current round once on mount for accurate expiry display.
@@ -93,6 +94,16 @@ export default function Home() {
     loadPage(page, filter, search)
   }, [page, loadPage])
 
+  // Fetch platform-wide aggregate stats once on mount (independent of pagination).
+  // Non-fatal: on failure, the hero falls back to the page-1 client computation.
+  useEffect(() => {
+    let cancelled = false
+    fetchPublicStats()
+      .then(s => { if (!cancelled) setPlatformStats(s) })
+      .catch(e => console.error('Failed to load platform stats:', e))
+    return () => { cancelled = true }
+  }, [])
+
   // Reload when the tab becomes visible again — catches the case where
   // a creator deployed a contract then navigated back to explore.
   useEffect(() => {
@@ -151,12 +162,19 @@ export default function Home() {
 
   // ── Hero data ──
   const statsBase = allProjects.length > 0 ? allProjects : projects
-  const totalPledged = Math.round(statsBase.reduce((s, p) => s + Number(p.gs?.raised ?? 0), 0) / 1_000_000)
-  const liveCount = statsBase.filter(p => deriveProjectStatus(p, currentRound) === 'active').length
-  const fundedCount = statsBase.filter(p => {
+  const totalPledgedClient = Math.round(statsBase.reduce((s, p) => s + Number(p.gs?.raised ?? 0), 0) / 1_000_000)
+  const fundedCountClient = statsBase.filter(p => {
     const s = deriveProjectStatus(p, currentRound)
     return s === 'funded' || s === 'distributed'
   }).length
+  // Prefer platform-wide server aggregates; fall back to page-1 client sums.
+  const totalPledged = platformStats
+    ? Math.round(Number(platformStats.totalRaisedMicro ?? 0) / 1_000_000)
+    : totalPledgedClient
+  const fundedCount = platformStats
+    ? Number(platformStats.fundedCount ?? 0)
+    : fundedCountClient
+  const liveCount = statsBase.filter(p => deriveProjectStatus(p, currentRound) === 'active').length
   const hasStats = totalPledged > 0 || liveCount > 0 || fundedCount > 0
 
   const featuredProjects = [...statsBase]
