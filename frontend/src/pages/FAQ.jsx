@@ -90,6 +90,10 @@ const SECTIONS = [
     heading: 'About the Platform',
     items: [
       {
+        q: 'Does Sprout have its own token?',
+        a: 'No. Sprout does not have a native platform token, and there is no Sprout token to buy, earn, or hold. The platform is funded through the listing and success fees described above, not through a token. Any token you encounter on Sprout belongs to an individual Reward campaign and is created by that campaign\'s creator — it is never issued by Sprout itself. Be cautious of anything claiming to be an official "Sprout token," as no such token exists.',
+      },
+      {
         q: 'Is this platform custodial?',
         a: 'No. All funds are held in individual Algorand smart contracts — one per campaign. Neither the platform nor any third party can access your ALGO or tokens. Every action (contribute, claim, refund) is a transaction you sign with your own wallet.',
       },
