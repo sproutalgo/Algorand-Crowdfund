@@ -384,11 +384,11 @@ export default function Home() {
       {/* ── How it works ── */}
       <section className="section wrap">
         <span className="eyebrow">How it works</span>
-        <h2 className="section-title" style={{ marginTop: 10, marginBottom: 32 }}>Funded fairly, settled on-chain</h2>
+        <h2 className="section-title" style={{ marginTop: 10, marginBottom: 32 }}>Community-funded, contract-enforced</h2>
         <div className="hiw">
           {[
             { ic: <Icon.spark />, n: '01', t: 'Launch your campaign', d: 'Set your funding goal, token rate, and deadline. Deploy a crowdfunding contract to Algorand in minutes.' },
-            { ic: <Icon.users />, n: '02', t: 'Backers contribute', d: 'Anyone with an Algorand wallet opts in and invests before the deadline. Every contribution is held in a non-custodial smart contract.' },
+            { ic: <Icon.users />, n: '02', t: 'Backers contribute', d: 'Anyone with an Algorand wallet opts in and contributes before the deadline. Every contribution is held in a non-custodial smart contract.' },
             { ic: <Icon.bolt />, n: '03', t: 'Goal reached → tokens', d: 'Hit your funding goal and backers receive the agreed upon project token. You receive the raised ALGO, minus a 4% fee.' },
             { ic: <Icon.refund />, n: '04', t: 'Missed → full refund', d: "If the goal isn't met by the deadline, every backer is refunded in full. No funds are ever stranded." },
           ].map(s => (
