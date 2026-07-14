@@ -333,7 +333,7 @@ export default function CreateProject() {
                       {form.highlights.map((h, i) => (
                         <div className="hi-row" key={i}>
                           <span className="hi-bullet"><Icon.check /></span>
-                          <input aria-label={`Highlight ${i + 1}`} className="input" placeholder={['e.g. Audited by two independent firms', 'e.g. Live on testnet with 1,400+ wallets', 'e.g. Backed by the Algorand Foundation'][i]} value={h} onChange={setHi(i)} />
+                          <input id={`highlight-${i}`} name={`highlight-${i}`} aria-label={`Highlight ${i + 1}`} className="input" placeholder={['e.g. Audited by two independent firms', 'e.g. Live on testnet with 1,400+ wallets', 'e.g. Backed by the Algorand Foundation'][i]} value={h} onChange={setHi(i)} />
                         </div>
                       ))}
                     </div>
@@ -394,6 +394,8 @@ export default function CreateProject() {
                     {plannedMilestones.map((m, i) => (
                       <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
                         <input
+                          id={`planned-milestone-${i}`}
+                          name={`planned-milestone-${i}`}
                           aria-label={`Planned milestone ${i + 1} title`}
                           className="input"
                           placeholder="Next Milestone Title"
