@@ -285,6 +285,10 @@ export default function Home() {
           <div className="search">
             <Icon.search />
             <input
+              id="explore-search"
+              name="explore-search"
+              type="search"
+              autoComplete="off"
               aria-label="Search projects"
               placeholder="Search projects…"
               value={search}

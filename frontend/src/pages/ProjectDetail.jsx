@@ -687,6 +687,8 @@ export default function ProjectDetail() {
                 )}
                 <div className="amt-input">
                   <input
+                    id="contribute-amount"
+                    name="contribute-amount"
                     aria-label="Contribution amount in ALGO"
                     type="number"
                     placeholder="50"
