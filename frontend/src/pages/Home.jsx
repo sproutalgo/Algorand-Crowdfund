@@ -3,7 +3,7 @@ import { algodClient, fetchOnChainBatch, gsFromCache } from '../utils/algorand'
 import { Link } from 'react-router-dom'
 import { fetchPublicProjects, fetchPublicStats } from '../utils/api'
 import ProjectCard from '../components/ProjectCard'
-import { SkeletonCard, Icon, Stat, deriveProjectStatus } from '../components/UI'
+import { SkeletonCard, Icon, Stat, deriveProjectStatus, fmtAlgo } from '../components/UI'
 
 const CATEGORIES = ['DeFi', 'RWA', 'AI', 'NFT', 'Gaming', 'Infrastructure', 'Social', 'Other']
 const PAGE_SIZE  = 50
@@ -218,7 +218,7 @@ export default function Home() {
               <div className="hero-stats">
                 {totalPledged > 0 && (
                   <Stat
-                    value={totalPledged >= 1000 ? `${(totalPledged / 1000).toFixed(1)}k` : String(totalPledged)}
+                    value={fmtAlgo(totalPledged, { compact: true })}
                     label="ALGO pledged"
                     accent
                   />

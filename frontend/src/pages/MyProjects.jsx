@@ -431,7 +431,7 @@ export default function MyProjects() {
                   <span className="field-hint">
                     Set at project creation — cannot be changed.
                     {asaInfo?.decimals > 0
-                      ? ` With ${asaInfo.decimals} decimals, ${setupForm.ratePerAlgo} display token${setupForm.ratePerAlgo !== '1' ? 's' : ''}/ALGO = ${Math.round(Number(setupForm.ratePerAlgo) * Math.pow(10, asaInfo.decimals)).toLocaleString()} base units/ALGO stored on-chain.`
+                      ? ` With ${asaInfo.decimals} decimals, ${setupForm.ratePerAlgo} display token${setupForm.ratePerAlgo !== '1' ? 's' : ''}/ALGO = ${Math.round(Number(setupForm.ratePerAlgo) * Math.pow(10, asaInfo.decimals)).toLocaleString('en-US')} base units/ALGO stored on-chain.`
                       : ''}
                   </span>
                 </div>
@@ -441,7 +441,7 @@ export default function MyProjects() {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Tokens to provide:</span>
                       <span className="mono" style={{ color: 'var(--text)' }}>
-                        {Math.floor((+setupForm.goalAlgo || 0) * (+setupForm.ratePerAlgo || 0) * Math.pow(10, asaDecimals)).toLocaleString()}
+                        {Math.floor((+setupForm.goalAlgo || 0) * (+setupForm.ratePerAlgo || 0) * Math.pow(10, asaDecimals)).toLocaleString('en-US')}
                         {asaInfo?.symbol ? ` ${asaInfo.symbol}` : ''} base units
                       </span>
                     </div>

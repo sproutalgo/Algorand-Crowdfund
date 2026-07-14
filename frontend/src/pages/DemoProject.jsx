@@ -193,7 +193,7 @@ export default function DemoProject() {
               </div>
               {amt > 0 && (
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12, textAlign: 'center' }}>
-                  You receive ≈ {tokens.toLocaleString()} {DEMO.meta.token_name}
+                  You receive ≈ {tokens.toLocaleString('en-US')} {DEMO.meta.token_name}
                 </div>
               )}
               <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled>
@@ -219,7 +219,7 @@ export default function DemoProject() {
                   { l: 'Goal',           v: `${fmtAlgo(goal / 1_000_000)} ALGO` },
                   { l: 'Rate',           v: `${DEMO.gs.rate} ${DEMO.meta.token_name} / ALGO` },
                   { l: 'Duration',       v: `${DEMO.gs.days} days` },
-                  { l: 'Token supply',   v: `${tokensTotal.toLocaleString()} ${DEMO.meta.token_name}` },
+                  { l: 'Token supply',   v: `${tokensTotal.toLocaleString('en-US')} ${DEMO.meta.token_name}` },
                   { l: 'Creator',        v: 'SPROUT…DEMO' },
                 ].map(({ l, v }) => (
                   <div key={l} style={{ display: 'flex', justifyContent: 'space-between' }}>

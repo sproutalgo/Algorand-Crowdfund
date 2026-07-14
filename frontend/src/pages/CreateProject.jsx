@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '@txnlab/use-wallet-react'
-import { algodClient, algoToMicro, ADMIN_ADDRESS, signAndSend } from '../utils/algorand'
+import { algodClient, algoToMicro, ADMIN_ADDRESS, signAndSend, formatAlgo } from '../utils/algorand'
 import { buildCreateAppTxnGroup, compileTeal } from '../utils/transactions'
 import { registerProject, fetchCreatorProjectsMeta } from '../utils/api'
 import { useToast } from '../context/ToastContext'
-import { Icon } from '../components/UI'
+import { Icon, fmtAlgo } from '../components/UI'
 import ProjectCard from '../components/ProjectCard'
 
 import APPROVAL_TEAL from '../../../contracts/approval.teal?raw'
@@ -80,13 +80,14 @@ export default function CreateProject() {
   const durDays = Number(form.durationDays) || 0
   const durRounds = Math.round(durDays * ROUNDS_PER_DAY)
 
-  // Listing fee — all campaigns have a minimum of 10 ALGO
+  // Listing fee — all campaigns have a minimum of 10 ALGO.
+  // Kept as raw numbers here; formatted for display via fmtAlgo (en-US pinned).
   const rawListingFee = goal && durDays ? (goal * durDays) / 100_000 : 0
   const listingFeeAlgo = goal && durDays
-    ? Math.max(rawListingFee, MIN_LISTING_FEE_ALGO).toFixed(3)
+    ? Math.max(rawListingFee, MIN_LISTING_FEE_ALGO)
     : null
-  const successFeeAlgo  = goal ? (goal * SUCCESS_FEE_PCT / 100).toFixed(2) : null
-  const tokensNeeded    = !isDonation && goal && rate ? (goal * rate).toLocaleString() : null
+  const successFeeAlgo  = goal ? (goal * SUCCESS_FEE_PCT / 100) : null
+  const tokensNeeded    = !isDonation && goal && rate ? (goal * rate) : null
 
   const durError = durDays > 0 && (durDays < MIN_DAYS || durDays > MAX_DAYS)
     ? `Duration must be between ${MIN_DAYS} and ${MAX_DAYS} days`
@@ -98,7 +99,7 @@ export default function CreateProject() {
     { ok: !!activeAddress,                                          label: 'Wallet connected' },
     { ok: !!form.name.trim(),                                       label: 'Project name' },
     { ok: !!form.tagline.trim(),                                    label: 'Tagline' },
-    { ok: goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO,           label: `Funding goal (${MIN_GOAL_ALGO}–${MAX_GOAL_ALGO.toLocaleString()} ALGO)` },
+    { ok: goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO,           label: `Funding goal (${MIN_GOAL_ALGO}–${fmtAlgo(MAX_GOAL_ALGO)} ALGO)` },
     ...(!isDonation ? [{ ok: rate > 0, label: 'Token rate set' }] : []),
     { ok: durDays >= MIN_DAYS && durDays <= MAX_DAYS,               label: `Duration (${MIN_DAYS}–${MAX_DAYS} days)` },
     { ok: !websiteError,                                            label: 'Website URL valid (or blank)' },
@@ -135,7 +136,7 @@ export default function CreateProject() {
         rateAsaPerAlgo: rateArg, durationDays: durDays,
       })
 
-      addToast(`Listing fee: ${(listingFee / 1_000_000).toFixed(3)} ALGO — approve both transactions.`, 'info', 6000)
+      addToast(`Listing fee: ${formatAlgo(listingFee, { decimals: 3 })} ALGO — approve both transactions.`, 'info', 6000)
       const confirmation = await signAndSend(signTransactions, txns.map(t => t.toByte()))
       const newAppId = Number(confirmation['application-index'] ?? confirmation.applicationIndex ?? 0)
 
@@ -381,7 +382,7 @@ export default function CreateProject() {
                     />
                     <span className="field-hint" style={Number(seriesTotalGoal) > 0 && goal > 0 && Number(seriesTotalGoal) < goal ? { color: 'var(--warn)' } : undefined}>
                       {Number(seriesTotalGoal) > 0 && goal > 0 && Number(seriesTotalGoal) < goal
-                        ? `Must be at least this campaign's goal (${goal.toLocaleString()} ALGO) — it won't be saved otherwise.`
+                        ? `Must be at least this campaign's goal (${fmtAlgo(goal)} ALGO) — it won't be saved otherwise.`
                         : 'The overall funding target across every milestone in this series. Backers see it as series-level progress on your campaign page.'}
                     </span>
                   </div>
@@ -429,10 +430,10 @@ export default function CreateProject() {
                     <span className="field-hint" style={{ color: 'var(--danger)' }}>Minimum goal is {MIN_GOAL_ALGO} ALGO.</span>
                   )}
                   {goal > MAX_GOAL_ALGO && (
-                    <span className="field-hint" style={{ color: 'var(--danger)' }}>Maximum goal is {MAX_GOAL_ALGO.toLocaleString()} ALGO.</span>
+                    <span className="field-hint" style={{ color: 'var(--danger)' }}>Maximum goal is {fmtAlgo(MAX_GOAL_ALGO)} ALGO.</span>
                   )}
                   {(!goal || (goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO)) && (
-                    <span className="field-hint">Must be a whole number of ALGO, {MIN_GOAL_ALGO}–{MAX_GOAL_ALGO.toLocaleString()} ALGO.</span>
+                    <span className="field-hint">Must be a whole number of ALGO, {MIN_GOAL_ALGO}–{fmtAlgo(MAX_GOAL_ALGO)} ALGO.</span>
                   )}
                 </div>
 
@@ -461,10 +462,10 @@ export default function CreateProject() {
                     : <span className="field-hint">
                         Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days.
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && listingFeeAlgo
-                          ? ` Listing fee: ${listingFeeAlgo} ALGO.`
+                          ? ` Listing fee: ${fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO.`
                           : ''}
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
-                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString()} Algorand rounds (~2.8 seconds each). Displayed days are approximate.`
+                          ? ` Duration is stored on-chain as ${durRounds.toLocaleString('en-US')} Algorand rounds (~2.8 seconds each). Displayed days are approximate.`
                           : ''}
                       </span>
                   }
@@ -495,10 +496,10 @@ export default function CreateProject() {
                   <div className="ring"><Icon.bolt /></div>
                   <h3 style={{ fontSize: 26 }}>Ready to deploy</h3>
                   <p className="muted" style={{ marginTop: 12, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
-                    <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {goal.toLocaleString()} ALGO over {durDays} days
+                    <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {fmtAlgo(goal)} ALGO over {durDays} days
                     {!isDonation ? ` at ${rate} tokens per ALGO` : ' as a contribution campaign'}.
-                    Listing fee: {listingFeeAlgo} ALGO paid at deploy.
-                    Success fee: {successFeeAlgo} ALGO (4%) if funded.
+                    Listing fee: {fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO paid at deploy.
+                    Success fee: {fmtAlgo(successFeeAlgo, { decimals: 2 })} ALGO (4%) if funded.
                   </p>
                   <button
                     className="btn btn-primary btn-lg"
@@ -561,15 +562,15 @@ export default function CreateProject() {
             <h4>Deployment summary</h4>
             {[
               { l: 'Campaign type',     v: isDonation ? 'Contribution campaign' : 'Reward campaign' },
-              { l: 'Funding goal',      v: goal ? `${goal.toLocaleString()} ALGO` : '—' },
+              { l: 'Funding goal',      v: goal ? `${fmtAlgo(goal)} ALGO` : '—' },
               ...(!isDonation ? [{ l: 'Token rate', v: rate ? `${rate} tokens / ALGO` : '—' }] : []),
               { l: 'Duration',          v: durDays >= MIN_DAYS && durDays <= MAX_DAYS ? `${durDays} days` : '—' },
-              { l: 'Listing fee',       v: listingFeeAlgo ? `${listingFeeAlgo} ALGO` : '—' },
-              { l: 'Success fee (4%)',  v: successFeeAlgo ? `${successFeeAlgo} ALGO` : '—' },
-              ...(!isDonation && tokensNeeded ? [{ l: 'Tokens to provide', v: tokensNeeded }] : []),
+              { l: 'Listing fee',       v: listingFeeAlgo != null ? `${fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO` : '—' },
+              { l: 'Success fee (4%)',  v: successFeeAlgo != null ? `${fmtAlgo(successFeeAlgo, { decimals: 2 })} ALGO` : '—' },
+              ...(!isDonation && tokensNeeded ? [{ l: 'Tokens to provide', v: fmtAlgo(tokensNeeded) }] : []),
               ...(milestoneTitle ? [{ l: 'Milestone', v: milestoneTitle }] : []),
               ...((selectedSeriesAppId || milestoneTitle) && Number(seriesTotalGoal) > 0
-                ? [{ l: 'Series total goal', v: `${Number(seriesTotalGoal).toLocaleString()} ALGO` }]
+                ? [{ l: 'Series total goal', v: `${fmtAlgo(Number(seriesTotalGoal))} ALGO` }]
                 : []),
             ].map(({ l, v }) => (
               <div className="sum-row" key={l}>

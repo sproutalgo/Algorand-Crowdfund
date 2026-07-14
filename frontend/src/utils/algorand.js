@@ -17,8 +17,45 @@ export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || ''
 export const microToAlgo = (micro) => Number(micro) / 1_000_000
 export const algoToMicro = (algo)  => Math.floor(Number(algo) * 1_000_000)
 
-export function formatAlgo(microAlgos, decimals = 2) {
-  return microToAlgo(microAlgos).toLocaleString('en-US', {
+/**
+ * Canonical ALGO display formatter — the single source of truth for how an
+ * ALGO amount is rendered anywhere in the UI. Locale is pinned to 'en-US' so
+ * output is identical regardless of the viewer's browser locale (a German
+ * browser must never render 45 as "45.000", which reads as 45,000).
+ *
+ * @param {number|bigint} microAlgos  amount in microAlgos
+ * @param {object} [opts]
+ * @param {number}  [opts.decimals=2] fixed decimal places (ignored when compact)
+ * @param {boolean} [opts.compact=false] abbreviate ≥1000 as "k" (stat tiles)
+ */
+export function formatAlgo(microAlgos, opts = {}) {
+  // Back-compat: formatAlgo(micro, 2) — second arg was previously `decimals`.
+  if (typeof opts === 'number') opts = { decimals: opts }
+  const { decimals = 2, compact = false } = opts
+  return formatAlgoAmount(microToAlgo(microAlgos), { decimals, compact })
+}
+
+/**
+ * Same formatting rules as formatAlgo() but takes a WHOLE-ALGO value rather
+ * than microAlgos. This backs the `fmtAlgo` helper re-exported from UI.jsx,
+ * whose ~30 call sites pass already-divided ALGO. Keeping both entry points
+ * means one formatting policy with two convenient signatures.
+ */
+export function formatAlgoAmount(algo, opts = {}) {
+  if (typeof opts === 'number') opts = { decimals: opts }
+  const { decimals = 2, compact = false } = opts
+  const n = typeof algo === 'bigint' ? Number(algo) : Number(algo) || 0
+
+  if (compact && Math.abs(n) >= 1000) {
+    // Whole thousands render cleanly (50k); otherwise one decimal (50.5k).
+    const k = n / 1000
+    return `${k.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: n % 1000 === 0 ? 0 : 1,
+    })}k`
+  }
+
+  return n.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })

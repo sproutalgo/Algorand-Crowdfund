@@ -118,8 +118,8 @@ function SeriesTimeline({ seriesId, currentAppId, meta, liveRaised = 0 }) {
                 )}
                 {m.goal_micro && (
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    Goal: {(Number(m.goal_micro) / 1_000_000).toLocaleString()} ALGO
-                    {Number(m.on_chain_raised) > 0 ? ` · Raised: ${(Number(m.on_chain_raised) / 1_000_000).toLocaleString()} ALGO` : ''}
+                    Goal: {(Number(m.goal_micro) / 1_000_000).toLocaleString('en-US')} ALGO
+                    {Number(m.on_chain_raised) > 0 ? ` · Raised: ${(Number(m.on_chain_raised) / 1_000_000).toLocaleString('en-US')} ALGO` : ''}
                   </span>
                 )}
               </div>
@@ -331,7 +331,7 @@ export default function ProjectDetail() {
   function formatTokens(n) {
     const whole = baseUnitsToTokens(n)
     const name  = asaUnitName || meta?.token_name || 'tokens'
-    return `${whole.toLocaleString(undefined, { maximumFractionDigits: asaDecimals })} ${name}`
+    return `${whole.toLocaleString('en-US', { maximumFractionDigits: asaDecimals })} ${name}`
   }
   const tokensPerAlgo = rate > 0 ? baseUnitsToTokens(rate) : 0
   const tokensYouGet  = contributeAmt && rate
@@ -709,7 +709,7 @@ export default function ProjectDetail() {
                         disabled={disabled}
                         style={disabled ? { opacity: 0.35, cursor: 'not-allowed' } : {}}
                       >
-                        {v.toLocaleString()}
+                        {v.toLocaleString('en-US')}
                       </button>
                     )
                   })}
@@ -801,8 +801,8 @@ export default function ProjectDetail() {
                     safeGs.creator && { label: 'Creator', val: shortAddr(safeGs.creator), copy: safeGs.creator, href: `${EXPLORER}/account/${safeGs.creator}` },
                     safeGs.asa_id && { label: 'ASA / Token', val: String(safeGs.asa_id), copy: String(safeGs.asa_id), href: `${EXPLORER}/asset/${safeGs.asa_id}` },
                     rate && { label: 'Token rate', val: `${tokensPerAlgo > 0 ? formatTokens(rate) : rate} / ALGO`, copy: null },
-                    deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString(), copy: null },
-                    deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString(), copy: null },
+                    deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString('en-US'), copy: null },
+                    deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString('en-US'), copy: null },
                     { label: 'Network', val: 'Algorand Testnet', copy: null },
                   ].filter(Boolean).map(({ label, val, copy, href }) => (
                     <div className="contract-row" key={label}>

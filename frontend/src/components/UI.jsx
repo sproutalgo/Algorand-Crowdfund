@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { formatAlgoAmount } from '../utils/algorand'
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 export const Icon = {
@@ -196,10 +197,24 @@ export function SkeletonCard() {
 }
 
 // ── Data helpers ───────────────────────────────────────────────────────────────
-export function fmtAlgo(n) {
-  if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k'
-  if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: 0 })
-  return n.toFixed(2)
+/**
+ * Display an ALGO amount (whole ALGO, not microAlgos).
+ *
+ * Thin wrapper over the canonical formatAlgoAmount() in utils/algorand.js so
+ * there is exactly ONE formatting policy in the app. Locale is pinned to
+ * 'en-US' inside the canonical formatter — this fixes the bug where a European
+ * browser rendered "45" as "45.000" (read as 45,000) via the old
+ * locale-sensitive toLocaleString(undefined, …) path.
+ *
+ * Defaults to 0 decimals because every campaign amount on the platform is
+ * whole ALGO (goals and contributions are integer-enforced), so
+ * "250 of 50,000 ALGO" reads cleanest. Pass { decimals: 2 } for fractional
+ * values (e.g. a listing fee) or { compact: true } to abbreviate ≥1000 as "k".
+ */
+export function fmtAlgo(n, opts = {}) {
+  if (typeof opts === 'number') opts = { decimals: opts }
+  const { decimals = 0, compact = false } = opts
+  return formatAlgoAmount(n, { decimals, compact })
 }
 
 export function pctNum(raised, goal) {

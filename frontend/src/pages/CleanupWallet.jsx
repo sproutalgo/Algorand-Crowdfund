@@ -300,7 +300,7 @@ export default function CleanupWallet() {
                       </div>
                       {hasPendingClaim && (
                         <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>
-                          You have {(contrib / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 6 })} ALGO pending.
+                          You have {(contrib / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 6 })} ALGO pending.
                           Clearing now would forfeit it permanently.
                         </div>
                       )}
@@ -360,7 +360,7 @@ export default function CleanupWallet() {
                       <div className="mp-meta" style={{ marginTop: 6 }}>
                         <IdTag label="ASA" value={String(asaId)} />
                         {balance > 0 && (
-                          <span className="faint">Balance {balance.toLocaleString()} — returned to creator</span>
+                          <span className="faint">Balance {balance.toLocaleString('en-US')} — returned to creator</span>
                         )}
                       </div>
                     </div>
