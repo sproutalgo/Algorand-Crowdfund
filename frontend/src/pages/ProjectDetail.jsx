@@ -1,6 +1,4 @@
-git add -A
-git commit -m "Add accessibility labels to form inputs"
-git pushimport React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useWallet } from '@txnlab/use-wallet-react'
 import algosdk from 'algosdk'
