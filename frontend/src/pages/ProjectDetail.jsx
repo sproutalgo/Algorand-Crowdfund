@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react'
+git add -A
+git commit -m "Add accessibility labels to form inputs"
+git pushimport React, { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useWallet } from '@txnlab/use-wallet-react'
 import algosdk from 'algosdk'
@@ -687,6 +689,7 @@ export default function ProjectDetail() {
                 )}
                 <div className="amt-input">
                   <input
+                    aria-label="Contribution amount in ALGO"
                     type="number"
                     placeholder="50"
                     value={contributeAmt}

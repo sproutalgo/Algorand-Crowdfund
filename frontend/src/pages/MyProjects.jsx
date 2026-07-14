@@ -386,8 +386,9 @@ export default function MyProjects() {
             {setupTab === 'existing' && (
               <div className="setup-modal-fields">
                 <div className="field">
-                  <label>ASA / Token ID *</label>
+                  <label htmlFor="mp-asa-id">ASA / Token ID *</label>
                   <input
+                    id="mp-asa-id"
                     className="input"
                     type="text"
                     inputMode="numeric"
@@ -420,13 +421,13 @@ export default function MyProjects() {
                 </div>
 
                 <div className="field">
-                  <label>Funding Goal (ALGO)</label>
+                  <div className="field-label">Funding Goal (ALGO)</div>
                   <div className="readonly-field">{setupForm.goalAlgo || '—'} ALGO</div>
                   <span className="field-hint">Set at project creation — cannot be changed.</span>
                 </div>
 
                 <div className="field">
-                  <label>Token Rate (display tokens per ALGO)</label>
+                  <div className="field-label">Token Rate (display tokens per ALGO)</div>
                   <div className="readonly-field">{setupForm.ratePerAlgo || '—'}</div>
                   <span className="field-hint">
                     Set at project creation — cannot be changed.
@@ -462,23 +463,23 @@ export default function MyProjects() {
                   Create a new Algorand Standard Asset for your project. You will sign one transaction to deploy the token, then proceed to setup.
                 </p>
                 <div className="field">
-                  <label>Token name *</label>
-                  <input className="input" placeholder="e.g. AlgoSwap Token" value={createAsaForm.name} onChange={e => setCreateAsaForm(f => ({ ...f, name: e.target.value }))} />
+                  <label htmlFor="mp-asa-name">Token name *</label>
+                  <input id="mp-asa-name" className="input" placeholder="e.g. AlgoSwap Token" value={createAsaForm.name} onChange={e => setCreateAsaForm(f => ({ ...f, name: e.target.value }))} />
                 </div>
                 <div className="field">
-                  <label>Ticker symbol *</label>
-                  <input className="input" placeholder="e.g. ASWAP" value={createAsaForm.unitName} onChange={e => setCreateAsaForm(f => ({ ...f, unitName: e.target.value.toUpperCase().slice(0, 8) }))} />
+                  <label htmlFor="mp-asa-ticker">Ticker symbol *</label>
+                  <input id="mp-asa-ticker" className="input" placeholder="e.g. ASWAP" value={createAsaForm.unitName} onChange={e => setCreateAsaForm(f => ({ ...f, unitName: e.target.value.toUpperCase().slice(0, 8) }))} />
                   <span className="field-hint">Up to 8 characters, uppercase.</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div className="field">
-                    <label>Total supply *</label>
-                    <input className="input" type="text" inputMode="numeric" placeholder="e.g. 1000000" value={createAsaForm.total} onChange={e => setCreateAsaForm(f => ({ ...f, total: e.target.value.replace(/[^0-9]/g, '') }))} />
+                    <label htmlFor="mp-asa-total">Total supply *</label>
+                    <input id="mp-asa-total" className="input" type="text" inputMode="numeric" placeholder="e.g. 1000000" value={createAsaForm.total} onChange={e => setCreateAsaForm(f => ({ ...f, total: e.target.value.replace(/[^0-9]/g, '') }))} />
                     <span className="field-hint">Display units.</span>
                   </div>
                   <div className="field">
-                    <label>Decimals</label>
-                    <select className="input" value={createAsaForm.decimals} onChange={e => setCreateAsaForm(f => ({ ...f, decimals: e.target.value }))}>
+                    <label htmlFor="mp-asa-decimals">Decimals</label>
+                    <select id="mp-asa-decimals" className="input" value={createAsaForm.decimals} onChange={e => setCreateAsaForm(f => ({ ...f, decimals: e.target.value }))}>
                       {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>

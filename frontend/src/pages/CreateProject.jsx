@@ -240,7 +240,7 @@ export default function CreateProject() {
               <div className="form-stack">
                 {/* Campaign type toggle */}
                 <div className="field" style={{ marginBottom: 8 }}>
-                  <label>Campaign type</label>
+                  <div className="field-label">Campaign type</div>
                   <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
                     {[
                       { v: 'token',    l: 'Reward campaign',       desc: 'Backers receive a project token' },
@@ -272,8 +272,8 @@ export default function CreateProject() {
                 {/* Continue existing series — shown at top for quick pre-fill */}
                 {creatorProjects.filter(p => p.milestone_title).length > 0 && (
                   <div className="field" style={{ marginBottom: 8 }}>
-                    <label>Continue existing series (optional)</label>
-                    <select className="input" value={selectedSeriesAppId} onChange={e => {
+                    <label htmlFor="cp-series">Continue existing series (optional)</label>
+                    <select id="cp-series" className="input" value={selectedSeriesAppId} onChange={e => {
                       const val = e.target.value
                       setSelectedSeriesAppId(val)
                       if (val) {
@@ -310,38 +310,39 @@ export default function CreateProject() {
 
                 <div className="form-grid">
                   <div className="field span-2">
-                    <label>Project name *</label>
-                    <input className="input" placeholder="e.g. AlgoSwap Protocol" value={form.name} onChange={set('name')} />
+                    <label htmlFor="cp-name">Project name *</label>
+                    <input id="cp-name" className="input" placeholder="e.g. AlgoSwap Protocol" value={form.name} onChange={set('name')} />
                   </div>
                   <div className="field span-2">
-                    <label>Tagline *</label>
-                    <input className="input" placeholder="One sentence that captures your project" value={form.tagline} onChange={set('tagline')} />
+                    <label htmlFor="cp-tagline">Tagline *</label>
+                    <input id="cp-tagline" className="input" placeholder="One sentence that captures your project" value={form.tagline} onChange={set('tagline')} />
                   </div>
                   <div className="field">
-                    <label>Category</label>
-                    <select className="input" value={form.category} onChange={set('category')}>
+                    <label htmlFor="cp-category">Category</label>
+                    <select id="cp-category" className="input" value={form.category} onChange={set('category')}>
                       {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="field span-2">
-                    <label>Full description</label>
-                    <textarea className="textarea" placeholder="Describe your project, goals, use of funds, and team background…" value={form.description} onChange={set('description')} />
+                    <label htmlFor="cp-description">Full description</label>
+                    <textarea id="cp-description" className="textarea" placeholder="Describe your project, goals, use of funds, and team background…" value={form.description} onChange={set('description')} />
                   </div>
                   <div className="field span-2">
-                    <label>Why back it · highlights</label>
+                    <div className="field-label">Why back it · highlights</div>
                     <div className="hi-list">
                       {form.highlights.map((h, i) => (
                         <div className="hi-row" key={i}>
                           <span className="hi-bullet"><Icon.check /></span>
-                          <input className="input" placeholder={['e.g. Audited by two independent firms', 'e.g. Live on testnet with 1,400+ wallets', 'e.g. Backed by the Algorand Foundation'][i]} value={h} onChange={setHi(i)} />
+                          <input aria-label={`Highlight ${i + 1}`} className="input" placeholder={['e.g. Audited by two independent firms', 'e.g. Live on testnet with 1,400+ wallets', 'e.g. Backed by the Algorand Foundation'][i]} value={h} onChange={setHi(i)} />
                         </div>
                       ))}
                     </div>
                     <span className="field-hint">Three scannable reasons shown to backers.</span>
                   </div>
                   <div className="field span-2">
-                    <label>Website (optional)</label>
+                    <label htmlFor="cp-website">Website (optional)</label>
                     <input
+                      id="cp-website"
                       className={`input${websiteError && form.websiteUrl ? ' input-error' : ''}`}
                       placeholder="https://x.com/yourproject"
                       value={form.websiteUrl}
@@ -362,16 +363,17 @@ export default function CreateProject() {
                   </p>
 
                   <div className="field" style={{ marginBottom: 12 }}>
-                    <label>This milestone</label>
-                    <input className="input" placeholder="e.g. This Milestone — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
+                    <label htmlFor="cp-milestone-title">This milestone</label>
+                    <input id="cp-milestone-title" className="input" placeholder="e.g. This Milestone — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
                   </div>
                   <div className="field" style={{ marginBottom: 12 }}>
-                    <label>Milestone description</label>
-                    <textarea className="textarea" style={{ minHeight: 60 }} placeholder="What will be delivered in this milestone?" value={milestoneDesc} onChange={e => setMilestoneDesc(e.target.value)} />
+                    <label htmlFor="cp-milestone-desc">Milestone description</label>
+                    <textarea id="cp-milestone-desc" className="textarea" style={{ minHeight: 60 }} placeholder="What will be delivered in this milestone?" value={milestoneDesc} onChange={e => setMilestoneDesc(e.target.value)} />
                   </div>
                   <div className="field" style={{ marginBottom: 12 }}>
-                    <label>Total series goal (ALGO) — optional</label>
+                    <label htmlFor="cp-series-goal">Total series goal (ALGO) — optional</label>
                     <input
+                      id="cp-series-goal"
                       className="input no-spin"
                       type="number"
                       min="0"
@@ -388,10 +390,11 @@ export default function CreateProject() {
                   </div>
 
                   <div className="field">
-                    <label>Planned future milestones</label>
+                    <div className="field-label">Planned future milestones</div>
                     {plannedMilestones.map((m, i) => (
                       <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
                         <input
+                          aria-label={`Planned milestone ${i + 1} title`}
                           className="input"
                           placeholder="Next Milestone Title"
                           value={m.title}
@@ -424,8 +427,8 @@ export default function CreateProject() {
               </div>
               <div className="form-grid">
                 <div className="field">
-                  <label>This milestone's funding goal (ALGO) *</label>
-                  <input className="input no-spin" type="text" inputMode="numeric" placeholder="10000" value={form.goalAlgo} onChange={onlyInt('goalAlgo')} />
+                  <label htmlFor="cp-goal">This milestone's funding goal (ALGO) *</label>
+                  <input id="cp-goal" className="input no-spin" type="text" inputMode="numeric" placeholder="10000" value={form.goalAlgo} onChange={onlyInt('goalAlgo')} />
                   {goal > 0 && goal < MIN_GOAL_ALGO && (
                     <span className="field-hint" style={{ color: 'var(--danger)' }}>Minimum goal is {MIN_GOAL_ALGO} ALGO.</span>
                   )}
@@ -439,8 +442,8 @@ export default function CreateProject() {
 
                 {!isDonation && (
                   <div className="field">
-                    <label>Token rate (per ALGO) *</label>
-                    <input className="input no-spin" type="text" inputMode="numeric" placeholder="1000" value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
+                    <label htmlFor="cp-rate">Token rate (per ALGO) *</label>
+                    <input id="cp-rate" className="input no-spin" type="text" inputMode="numeric" placeholder="1000" value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
                     <span className="field-hint">
                       How many tokens are allocated per ALGO contributed. Enter the number of display tokens (e.g. 1 token per ALGO = enter 1). The rate is adjusted automatically for token decimals during setup.
                     </span>
@@ -448,8 +451,9 @@ export default function CreateProject() {
                 )}
 
                 <div className="field span-2">
-                  <label>Campaign duration (days) *</label>
+                  <label htmlFor="cp-duration">Campaign duration (days) *</label>
                   <input
+                    id="cp-duration"
                     className={`input no-spin${durError ? ' input-error' : ''}`}
                     type="text"
                     inputMode="numeric"

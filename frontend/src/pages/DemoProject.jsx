@@ -175,6 +175,7 @@ export default function DemoProject() {
               </div>
               <div style={{ position: 'relative', marginBottom: 12 }}>
                 <input
+                  aria-label="Demo contribution amount"
                   className="input no-spin"
                   type="text"
                   value={contributeAmt}

@@ -324,7 +324,7 @@ hr.divider { height: 1px; background: var(--border); border: none; margin: 4px 0
 
 /* ── Inputs ── */
 .field { display: flex; flex-direction: column; gap: 8px; }
-.field > label {
+.field > label, .field > .field-label {
   font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-faint);
 }

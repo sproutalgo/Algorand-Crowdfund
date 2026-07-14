@@ -285,6 +285,7 @@ export default function Home() {
           <div className="search">
             <Icon.search />
             <input
+              aria-label="Search projects"
               placeholder="Search projects…"
               value={search}
               onChange={e => setSearch(e.target.value)}

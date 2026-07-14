@@ -403,8 +403,9 @@ export default function CleanupWallet() {
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 16 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>App ID</label>
+              <label htmlFor="cw-app-id" style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>App ID</label>
               <input
+                id="cw-app-id"
                 className="input"
                 type="text"
                 inputMode="numeric"
