@@ -34,7 +34,8 @@ create table if not exists projects (
 
   -- economics (captured at deployment so they survive contract deletion)
   goal_micro      bigint not null default 0,   -- funding goal in microALGO
-  rate_per_algo   bigint not null default 0,   -- token base units per 1 ALGO
+  rate_per_algo   bigint not null default 0,   -- tokens_per_bundle (whole tokens)
+  algo_per_bundle bigint not null default 1,   -- algo_per_bundle (whole ALGO, >0)
 
   -- lifecycle flags (written explicitly at known moments)
   is_funded       boolean not null default false,
@@ -60,6 +61,12 @@ drop trigger if exists trg_projects_updated_at on projects;
 create trigger trg_projects_updated_at
   before update on projects
   for each row execute procedure touch_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Idempotent column additions (for databases created before a column existed).
+-- Safe to run repeatedly; no-op if the column already exists.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table projects add column if not exists algo_per_bundle bigint not null default 1;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Row-level security

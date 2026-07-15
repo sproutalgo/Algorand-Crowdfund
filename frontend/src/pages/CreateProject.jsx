@@ -52,7 +52,7 @@ export default function CreateProject() {
   const [form, setForm] = useState({
     name: '', tagline: '', description: '', category: 'DeFi',
     highlights: ['', '', ''], websiteUrl: '',
-    goalAlgo: '', ratePerAlgo: '', durationDays: '',
+    goalAlgo: '', ratePerAlgo: '', algoPerBundle: '1', durationDays: '',
   })
 
   // Series / milestones
@@ -76,7 +76,8 @@ export default function CreateProject() {
   const onlyInt = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value.replace(/[^0-9]/g, '') }))
 
   const goal    = Number(form.goalAlgo)    || 0
-  const rate    = Number(form.ratePerAlgo) || 0
+  const rate    = Number(form.ratePerAlgo) || 0        // tokens_per_bundle
+  const algoPerBundle = Number(form.algoPerBundle) || 1 // algo_per_bundle (>=1)
   const durDays = Number(form.durationDays) || 0
   const durRounds = Math.round(durDays * ROUNDS_PER_DAY)
 
@@ -87,7 +88,10 @@ export default function CreateProject() {
     ? Math.max(rawListingFee, MIN_LISTING_FEE_ALGO)
     : null
   const successFeeAlgo  = goal ? (goal * SUCCESS_FEE_PCT / 100) : null
-  const tokensNeeded    = !isDonation && goal && rate ? (goal * rate) : null
+  // Whole tokens distributed at full goal = floor(goal * tpb / apb).
+  const tokensNeeded    = !isDonation && goal && rate
+    ? Math.floor((goal * rate) / algoPerBundle)
+    : null
 
   const durError = durDays > 0 && (durDays < MIN_DAYS || durDays > MAX_DAYS)
     ? `Duration must be between ${MIN_DAYS} and ${MAX_DAYS} days`
@@ -100,7 +104,7 @@ export default function CreateProject() {
     { ok: !!form.name.trim(),                                       label: 'Project name' },
     { ok: !!form.tagline.trim(),                                    label: 'Tagline' },
     { ok: goal >= MIN_GOAL_ALGO && goal <= MAX_GOAL_ALGO,           label: `Funding goal (${MIN_GOAL_ALGO}–${fmtAlgo(MAX_GOAL_ALGO)} ALGO)` },
-    ...(!isDonation ? [{ ok: rate > 0, label: 'Token rate set' }] : []),
+    ...(!isDonation ? [{ ok: rate > 0 && algoPerBundle > 0, label: 'Exchange rate set' }] : []),
     { ok: durDays >= MIN_DAYS && durDays <= MAX_DAYS,               label: `Duration (${MIN_DAYS}–${MAX_DAYS} days)` },
     { ok: !websiteError,                                            label: 'Website URL valid (or blank)' },
   ]
@@ -128,12 +132,14 @@ export default function CreateProject() {
       const approvalProgram = await compileTeal(APPROVAL_TEAL)
       const clearProgram    = await compileTeal(CLEAR_TEAL)
       const goalMicro       = algoToMicro(goal)
-      const rateArg         = isDonation ? 0 : rate
+      // Two-value rate: donation => tokens_per_bundle 0; else the entered ratio.
+      const tpbArg          = isDonation ? 0 : rate
+      const apbArg          = isDonation ? 1 : algoPerBundle
 
       const { txns, listingFee } = await buildCreateAppTxnGroup({
         sender: activeAddress, approvalProgram, clearProgram,
         adminAddress: ADMIN_ADDRESS, goalMicroAlgos: goalMicro,
-        rateAsaPerAlgo: rateArg, durationDays: durDays,
+        tokensPerBundle: tpbArg, algoPerBundle: apbArg, durationDays: durDays,
       })
 
       addToast(`Listing fee: ${formatAlgo(listingFee, { decimals: 3 })} ALGO — approve both transactions.`, 'info', 6000)
@@ -160,7 +166,7 @@ export default function CreateProject() {
       const registrationMeta = {
         name: form.name, tagline: form.tagline, description: form.description,
         category: form.category, websiteUrl: form.websiteUrl,
-        tokenName: '', goalMicro, ratePerAlgo: rateArg,
+        tokenName: '', goalMicro, ratePerAlgo: tpbArg, algoPerBundle: apbArg,
         highlights: form.highlights.filter(h => h.trim()),
         isDonation,
         seriesId,
@@ -444,10 +450,15 @@ export default function CreateProject() {
 
                 {!isDonation && (
                   <div className="field">
-                    <label htmlFor="cp-rate">Token rate (per ALGO) *</label>
-                    <input id="cp-rate" className="input no-spin" type="text" inputMode="numeric" placeholder="1000" value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
+                    <label htmlFor="cp-rate">Exchange rate *</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <input id="cp-rate" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ maxWidth: 120 }} value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
+                      <span className="faint" style={{ fontSize: 13.5 }}>token{form.ratePerAlgo === '1' ? '' : 's'} per</span>
+                      <input id="cp-apb" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ maxWidth: 120 }} value={form.algoPerBundle} onChange={onlyInt('algoPerBundle')} />
+                      <span className="faint" style={{ fontSize: 13.5 }}>ALGO</span>
+                    </div>
                     <span className="field-hint">
-                      How many tokens are allocated per ALGO contributed. Enter the number of display tokens (e.g. 1 token per ALGO = enter 1). The rate is adjusted automatically for token decimals during setup.
+                      How many whole tokens a backer receives per amount of ALGO. Example: "1 token per 10 ALGO" means a 10 ALGO contribution yields 1 token, and amounts below the ratio round down. Token decimals are handled automatically during setup.
                     </span>
                   </div>
                 )}
@@ -503,7 +514,7 @@ export default function CreateProject() {
                   <h3 style={{ fontSize: 26 }}>Ready to deploy</h3>
                   <p className="muted" style={{ marginTop: 12, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
                     <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {fmtAlgo(goal)} ALGO over {durDays} days
-                    {!isDonation ? ` at ${rate} tokens per ALGO` : ' as a contribution campaign'}.
+                    {!isDonation ? ` at ${rate} token${rate === 1 ? '' : 's'} per ${algoPerBundle} ALGO` : ' as a contribution campaign'}.
                     Listing fee: {fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO paid at deploy.
                     Success fee: {fmtAlgo(successFeeAlgo, { decimals: 2 })} ALGO (4%) if funded.
                   </p>
@@ -569,7 +580,7 @@ export default function CreateProject() {
             {[
               { l: 'Campaign type',     v: isDonation ? 'Contribution campaign' : 'Reward campaign' },
               { l: 'Funding goal',      v: goal ? `${fmtAlgo(goal)} ALGO` : '—' },
-              ...(!isDonation ? [{ l: 'Token rate', v: rate ? `${rate} tokens / ALGO` : '—' }] : []),
+              ...(!isDonation ? [{ l: 'Exchange rate', v: rate ? `${rate} token${rate === 1 ? '' : 's'} / ${algoPerBundle} ALGO` : '—' }] : []),
               { l: 'Duration',          v: durDays >= MIN_DAYS && durDays <= MAX_DAYS ? `${durDays} days` : '—' },
               { l: 'Listing fee',       v: listingFeeAlgo != null ? `${fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO` : '—' },
               { l: 'Success fee (4%)',  v: successFeeAlgo != null ? `${fmtAlgo(successFeeAlgo, { decimals: 2 })} ALGO` : '—' },

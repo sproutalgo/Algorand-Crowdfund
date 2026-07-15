@@ -40,7 +40,9 @@ from pyteal import *
 #
 # ── Global State (uint unless noted) ─────────────────────────────────────────
 # - "goal":            funding goal (microAlgos); whole-ALGO multiple, >= 10 ALGO
-# - "rate":            ASA base units per 1 ALGO; > 0
+# - "tpb":             tokens_per_bundle (whole tokens); 0 == donation campaign
+# - "apb":             algo_per_bundle (whole ALGO); always > 0
+# - "dec_factor":      10^ASA_decimals; 0 until setup, read on-chain at setup
 # - "deadline":        round after which contributions are rejected
 # - "days":            campaign duration in days (1–100)
 # - "asa_id":          asset ID for the project token (0 until setup; reset to 0
@@ -81,11 +83,19 @@ ROUNDS_PER_DAY      = Int(10)      # was Int(30_857)
 MIN_DAYS            = Int(1)
 MAX_DAYS            = Int(100)
 MAX_GOAL            = Int(100_000_000_000_000)  # 100 million ALGO in microAlgos
+# Overflow ceiling for the token-distribution guard: 99% of uint64 max, giving
+# headroom so no finalize intermediate (contrib*tpb, or whole*dec_factor) wraps.
+SAFE_CEIL           = Int(18262276632972455936)  # floor((2^64 - 1) * 0.99)
 SUCCESS_FEE_PCT     = Int(4)
 
 # ── Global state keys ───────────────────────────────────────────────────────────
 KEY_GOAL            = Bytes("goal")
-KEY_RATE            = Bytes("rate")
+# Two-integer exchange rate: "tokens_per_bundle whole tokens per algo_per_bundle ALGO".
+# tokens_per_bundle == 0 signals a donation campaign (no token distribution).
+# algo_per_bundle is always > 0 (asserted at create) to avoid divide-by-zero.
+KEY_TPB             = Bytes("tpb")        # tokens_per_bundle (whole tokens)
+KEY_APB             = Bytes("apb")        # algo_per_bundle (whole ALGO)
+KEY_DEC_FACTOR      = Bytes("dec_factor") # 10^ASA_decimals, read on-chain at setup
 KEY_DEADLINE        = Bytes("deadline")
 KEY_DAYS            = Bytes("days")
 KEY_ASA             = Bytes("asa_id")
@@ -104,13 +114,16 @@ LKEY_CONTRIB = Bytes("contrib")
 def approval_program():
 
     # ── on_create ───────────────────────────────────────────────────────────────
-    # Args: [0]=admin(32 bytes), [1]=goal(microAlgos), [2]=rate, [3]=days(1-100)
+    # Args: [0]=admin(32 bytes), [1]=goal(microAlgos), [2]=tokens_per_bundle,
+    #       [3]=days(1-100), [4]=algo_per_bundle
     # Group: [0]=ApplicationCreate, [1]=Payment(listing_fee) from creator to admin
-    # rate == 0 signals a donation campaign (no token distribution).
+    # tokens_per_bundle == 0 signals a donation campaign (no token distribution).
+    # algo_per_bundle must be > 0 always (it is a divisor in the payout math).
     # All campaigns have a minimum listing fee of 10 ALGO regardless of goal/days.
     days_arg         = Btoi(Txn.application_args[3])
     goal_arg         = Btoi(Txn.application_args[1])
-    rate_arg         = Btoi(Txn.application_args[2])
+    tpb_arg          = Btoi(Txn.application_args[2])
+    apb_arg          = Btoi(Txn.application_args[4])
     listing_fee      = (goal_arg * days_arg) / Int(100_000)
     # Minimum listing fee is 10 ALGO (10_000_000 microAlgos), for all campaigns
     MIN_LISTING_FEE  = Int(10_000_000)
@@ -119,13 +132,15 @@ def approval_program():
     admin_arg        = Txn.application_args[0]
 
     on_create = Seq(
-        Assert(Txn.application_args.length() == Int(4)),
+        Assert(Txn.application_args.length() == Int(5)),
         Assert(Len(admin_arg) == Int(32)),
         Assert(goal_arg > Int(0)),
         Assert(goal_arg % Int(1_000_000) == Int(0)),
         Assert(goal_arg >= Int(10_000_000)),
         Assert(goal_arg <= MAX_GOAL),
-        # rate == 0 is allowed for donation campaigns; rate > 0 for token campaigns
+        # tokens_per_bundle == 0 is allowed (donation); > 0 for token campaigns.
+        # algo_per_bundle must always be > 0 — it is a divisor at payout time.
+        Assert(apb_arg > Int(0)),
         Assert(days_arg >= MIN_DAYS),
         Assert(days_arg <= MAX_DAYS),
         # Listing fee payment: grouped Payment from creator to admin
@@ -140,11 +155,13 @@ def approval_program():
         App.globalPut(KEY_CREATOR,         Txn.sender()),
         App.globalPut(KEY_ADMIN,           admin_arg),
         App.globalPut(KEY_GOAL,            goal_arg),
-        App.globalPut(KEY_RATE,            rate_arg),
+        App.globalPut(KEY_TPB,             tpb_arg),
+        App.globalPut(KEY_APB,             apb_arg),
         App.globalPut(KEY_DAYS,            days_arg),
         App.globalPut(KEY_DEADLINE,        deadline_rounds),
         App.globalPut(KEY_RAISED,          Int(0)),
         App.globalPut(KEY_ASA,             Int(0)),
+        App.globalPut(KEY_DEC_FACTOR,      Int(0)),
         App.globalPut(KEY_FUNDED_ROUND,    Int(0)),
         App.globalPut(KEY_CANCELLED,       Int(0)),
         App.globalPut(KEY_CREATOR_CLAIMED, Int(0)),
@@ -155,7 +172,9 @@ def approval_program():
     # ── Utility expressions ─────────────────────────────────────────────────────
     app_addr        = Global.current_application_address()
     goal            = App.globalGet(KEY_GOAL)
-    rate            = App.globalGet(KEY_RATE)
+    tpb             = App.globalGet(KEY_TPB)          # tokens_per_bundle
+    apb             = App.globalGet(KEY_APB)          # algo_per_bundle
+    dec_factor      = App.globalGet(KEY_DEC_FACTOR)   # 10^decimals, set at setup
     deadline        = App.globalGet(KEY_DEADLINE)
     asa_id          = App.globalGet(KEY_ASA)
     raised          = App.globalGet(KEY_RAISED)
@@ -197,6 +216,10 @@ def approval_program():
 
     # ── setup ───────────────────────────────────────────────────────────────────
     # Group: [0] AppCall("setup"), [1] AssetTransfer(tokens from creator to app)
+    asa_decimals = AssetParam.decimals(Txn.assets[0])
+    df           = ScratchVar(TealType.uint64)   # 10^decimals
+    pool_needed  = ScratchVar(TealType.uint64)   # base units the pool must cover
+    whole_cap    = ScratchVar(TealType.uint64)   # max whole tokens at full goal
     setup = Seq(
         Assert(is_creator),
         Assert(asa_id == Int(0)),          # one-time only
@@ -207,6 +230,24 @@ def approval_program():
         App.globalPut(KEY_ASA, Txn.assets[0]),
         Assert(Txn.group_index() == Int(0)),
         Assert(Global.group_size() == Int(2)),
+        # Read the ASA decimals on-chain (no trust in caller-supplied value) and
+        # store dec_factor = 10^decimals for use at finalize.
+        asa_decimals,
+        Assert(asa_decimals.hasValue()),
+        df.store(Exp(Int(10), asa_decimals.value())),
+        App.globalPut(KEY_DEC_FACTOR, df.load()),
+        # Overflow guard (token campaigns only): prove no finalize intermediate can
+        # exceed uint64 at the worst case of one backer contributing the whole goal.
+        # numer_max = goal * tpb ;  whole_cap = numer_max / (apb * 1e6) ;
+        # pool/base_max = whole_cap * dec_factor. Both must stay under SAFE_CEIL.
+        If(tpb != Int(0)).Then(Seq(
+            Assert(goal * tpb <= SAFE_CEIL),
+            whole_cap.store((goal * tpb) / (apb * Int(1_000_000))),
+            pool_needed.store(whole_cap.load() * df.load()),
+            Assert(pool_needed.load() <= SAFE_CEIL),
+        )).Else(
+            pool_needed.store(Int(0)),
+        ),
         # Inner opt-in to ASA (fee paid by caller via pooling)
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
@@ -217,12 +258,13 @@ def approval_program():
             TxnField.fee:            Int(0),
         }),
         InnerTxnBuilder.Submit(),
-        # Validate ASA token pool transfer covers goal × rate
+        # Validate ASA token pool transfer covers the whole-token distribution at
+        # full goal (floor-to-whole-tokens, scaled to base units).
         Assert(Gtxn[1].type_enum() == TxnType.AssetTransfer),
         Assert(Gtxn[1].sender() == Txn.sender()),
         Assert(Gtxn[1].asset_receiver() == app_addr),
         Assert(Gtxn[1].xfer_asset() == Txn.assets[0]),
-        Assert(Gtxn[1].asset_amount() >= (goal * rate) / Int(1_000_000)),
+        Assert(Gtxn[1].asset_amount() >= pool_needed.load()),
         Assert(Gtxn[1].close_remainder_to() == Global.zero_address()),
         Assert(Gtxn[1].rekey_to() == Global.zero_address()),
         Approve()
@@ -232,7 +274,7 @@ def approval_program():
     # raised moves UP by the contribution and is never decremented; it is the
     # monotonic record of progress toward goal. Per-investor `contrib` local
     # state records the individual stake (settled to zero on finalize/refund).
-    # Donation campaigns (rate==0): no asa_id required, no token distribution.
+    # Donation campaigns (tpb==0): no asa_id required, no token distribution.
     investor   = Txn.sender()
     new_raised = ScratchVar(TealType.uint64)
     contribute = Seq(
@@ -240,7 +282,7 @@ def approval_program():
         Assert(Not(is_cancelled)),
         Assert(raised < goal),
         # Token campaigns require setup (asa_id != 0); donation campaigns skip setup
-        If(rate != Int(0)).Then(Assert(asa_id != Int(0))),
+        If(tpb != Int(0)).Then(Assert(asa_id != Int(0))),
         Assert(Txn.group_index() == Int(0)),
         Assert(Global.group_size() == Int(2)),
         Assert(Gtxn[1].type_enum() == TxnType.Payment),
@@ -263,19 +305,23 @@ def approval_program():
 
     # ── finalize ────────────────────────────────────────────────────────────────
     # Success only. Investor claims tokens; their local contrib is zeroed.
-    # Donation campaigns (rate==0): no tokens distributed, contrib zeroed immediately.
-    contrib_amt = ScratchVar(TealType.uint64)
-    tokens_due  = ScratchVar(TealType.uint64)
+    # Donation campaigns (tpb==0): no tokens distributed, contrib zeroed immediately.
+    contrib_amt  = ScratchVar(TealType.uint64)
+    whole_tokens = ScratchVar(TealType.uint64)
+    tokens_due   = ScratchVar(TealType.uint64)
     finalize = Seq(
         Assert(Global.group_size() == Int(1)),
         Assert(succeeded),
         Assert(Not(is_cancelled)),
         contrib_amt.store(App.localGet(investor, LKEY_CONTRIB)),
         Assert(contrib_amt.load() > Int(0)),
-        # Token campaigns: distribute tokens proportional to contribution
-        # Donation campaigns (rate==0): skip token distribution
-        If(rate != Int(0)).Then(Seq(
-            tokens_due.store((contrib_amt.load() * rate) / Int(1_000_000)),
+        # Token campaigns: floor to WHOLE tokens first, then scale to base units.
+        #   whole_tokens = floor( contrib * tpb / (apb * 1e6) )
+        #   tokens_due   = whole_tokens * dec_factor
+        # Donation campaigns (tpb==0): skip token distribution.
+        If(tpb != Int(0)).Then(Seq(
+            whole_tokens.store((contrib_amt.load() * tpb) / (apb * Int(1_000_000))),
+            tokens_due.store(whole_tokens.load() * dec_factor),
             If(tokens_due.load() > Int(0)).Then(Seq(
                 InnerTxnBuilder.Begin(),
                 InnerTxnBuilder.SetFields({

@@ -12,10 +12,14 @@ async function getSp(fee = 1000) {
  * [0] ApplicationCreate
  * [1] Payment of listing fee from creator to admin (goal × days / 100,000, min 10 ALGO)
  *
- * numGlobalInts = 10:
- *   goal, rate, deadline, days, asa_id, raised,
+ * numGlobalInts = 12:
+ *   goal, tpb, apb, dec_factor, deadline, days, asa_id, raised,
  *   funded_round, cancelled, creator_claimed, admin_claimed
  * numGlobalByteSlices = 2: creator, admin
+ *
+ * Exchange rate is two integers: tokens_per_bundle whole tokens per
+ * algo_per_bundle ALGO. tokens_per_bundle == 0 => donation campaign.
+ * algo_per_bundle must be > 0 (enforced in the contract).
  *
  * The contract computes deadline internally from days × ROUNDS_PER_DAY.
  * Minimum goal: 10 ALGO (10_000_000 microAlgos) — enforced in the contract.
@@ -27,7 +31,8 @@ export async function buildCreateAppTxnGroup({
   clearProgram,
   adminAddress,
   goalMicroAlgos,
-  rateAsaPerAlgo,
+  tokensPerBundle,
+  algoPerBundle,
   durationDays,
 }) {
   const sp         = await getSp()
@@ -48,13 +53,15 @@ export async function buildCreateAppTxnGroup({
     clearProgram,
     numLocalInts: 1,
     numLocalByteSlices: 0,
-    numGlobalInts: 10,
+    numGlobalInts: 12,
     numGlobalByteSlices: 2,
+    // Contract create args: [admin, goal, tokens_per_bundle, days, algo_per_bundle]
     appArgs: [
       adminBytes,
       algosdk.encodeUint64(BigInt(goalMicroAlgos)),
-      algosdk.encodeUint64(BigInt(rateAsaPerAlgo)),
+      algosdk.encodeUint64(BigInt(tokensPerBundle)),
       algosdk.encodeUint64(BigInt(days)),
+      algosdk.encodeUint64(BigInt(algoPerBundle)),
     ],
   })
 
@@ -79,11 +86,17 @@ export async function buildCreateAppTxnGroup({
  * ALGO for minimum balance (a separate payment transaction).
  * Fee: 2000 covers the inner ASA opt-in (fee:0 → caller-pooled).
  */
-export async function buildSetupGroup({ sender, appId, asaId, goalMicroAlgos, rateAsaPerAlgo, appAddress }) {
+export async function buildSetupGroup({ sender, appId, asaId, goalMicroAlgos, tokensPerBundle, algoPerBundle, asaDecimals, appAddress }) {
   const sp      = await getSp()
   const spInner = { ...sp, fee: 2000 }  // covers inner ASA opt-in
 
-  const tokensRequired = Math.floor((goalMicroAlgos * rateAsaPerAlgo) / 1_000_000)
+  // Must match the contract's pool_needed (floor-to-whole-tokens, then scale):
+  //   whole = floor(goal * tpb / (apb * 1e6));  pool = whole * 10^decimals
+  const decFactor = Math.pow(10, Number(asaDecimals) || 0)
+  const wholeTokens = Number(tokensPerBundle) === 0
+    ? 0
+    : Math.floor((goalMicroAlgos * Number(tokensPerBundle)) / (Number(algoPerBundle) * 1_000_000))
+  const tokensRequired = wholeTokens * decFactor
 
   const appCallTxn = algosdk.makeApplicationNoOpTxnFromObject({
     sender,

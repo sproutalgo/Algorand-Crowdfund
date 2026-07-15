@@ -23,7 +23,7 @@ export default function MyProjects() {
   const [filter, setFilter]       = useState('All')
   const [setupModal, setSetupModal] = useState(null)
   const [setupTab, setSetupTab]     = useState('existing') // 'existing' | 'create'
-  const [setupForm, setSetupForm]   = useState({ asaId: '', goalAlgo: '', ratePerAlgo: '' })
+  const [setupForm, setSetupForm]   = useState({ asaId: '', goalAlgo: '', ratePerAlgo: '', algoPerBundle: '1' })
   const [settingUp, setSettingUp]   = useState(false)
   const [asaInfo, setAsaInfo]       = useState(null)
   const [asaFetching, setAsaFetching] = useState(false)
@@ -94,7 +94,8 @@ export default function MyProjects() {
     setSetupForm({
       asaId: '',
       goalAlgo: p.meta?.goal_micro ? (Number(p.meta.goal_micro) / 1_000_000).toString() : ((Number(p.gs?.goal) || 0) / 1_000_000).toString(),
-      ratePerAlgo: p.meta?.rate_per_algo ? String(p.meta.rate_per_algo) : (Number(p.gs?.rate) || '').toString(),
+      ratePerAlgo: p.meta?.rate_per_algo != null ? String(p.meta.rate_per_algo) : (Number(p.gs?.tpb) || '').toString(),
+      algoPerBundle: p.meta?.algo_per_bundle != null ? String(p.meta.algo_per_bundle) : (Number(p.gs?.apb) || 1).toString(),
     })
     setAsaInfo(null)
     setAsaError(null)
@@ -168,8 +169,10 @@ export default function MyProjects() {
     const { appId } = setupModal
     const asaId = parseInt(setupForm.asaId)
     const goalAlgo = parseFloat(setupForm.goalAlgo)
-    const ratePerAlgo = parseInt(setupForm.ratePerAlgo)
-    if (!goalAlgo || !ratePerAlgo) return addToast('Fill in all fields', 'error')
+    const tokensPerBundle = parseInt(setupForm.ratePerAlgo)
+    const algoPerBundle = parseInt(setupForm.algoPerBundle) || 1
+    if (!goalAlgo || !tokensPerBundle) return addToast('Fill in all fields', 'error')
+    if (algoPerBundle < 1) return addToast('ALGO per bundle must be at least 1', 'error')
     if (!asaId || asaId <= 0) return addToast('Enter a valid ASA ID first', 'error')
     if (asaError) return addToast(asaError, 'error')
     if (!asaInfo) return addToast('Wait for ASA info to load, or re-enter the ASA ID', 'error')
@@ -178,10 +181,9 @@ export default function MyProjects() {
       const appAddress = algosdk.getApplicationAddress(appId)
       const goalMicroAlgos = algoToMicro(goalAlgo)
 
-      // Decimal-aware rate: the contract stores base units per microAlgo
-      // The UI rate is display tokens per ALGO, so multiply by 10^decimals
+      // The contract reads ASA decimals on-chain and computes dec_factor itself.
+      // The builder needs decimals only to compute the token pool amount to send.
       const decimals = asaInfo.decimals ?? 0
-      const baseUnitsPerAlgo = Math.round(ratePerAlgo * Math.pow(10, decimals))
 
       addToast('Step 1/2: Funding app account for minimum balance…', 'info', 3000)
       const sp = await algodClient.getTransactionParams().do()
@@ -199,7 +201,7 @@ export default function MyProjects() {
         addToast('Step 1/2: Already opted in — skipping…', 'info', 2000)
       }
       addToast('Step 2/2: Sending setup (ASA opt-in + token pool)…', 'info', 3000)
-      const txns = await buildSetupGroup({ sender: activeAddress, appId, asaId, goalMicroAlgos, rateAsaPerAlgo: baseUnitsPerAlgo, appAddress })
+      const txns = await buildSetupGroup({ sender: activeAddress, appId, asaId, goalMicroAlgos, tokensPerBundle, algoPerBundle, asaDecimals: decimals, appAddress })
       const encoded = encodeUnsignedTxns(txns)
       await signAndSend(signTransactions, encoded)
       if (asaInfo.symbol) {
@@ -427,13 +429,14 @@ export default function MyProjects() {
                 </div>
 
                 <div className="field">
-                  <div className="field-label">Token Rate (display tokens per ALGO)</div>
-                  <div className="readonly-field">{setupForm.ratePerAlgo || '—'}</div>
+                  <div className="field-label">Exchange Rate</div>
+                  <div className="readonly-field">
+                    {setupForm.ratePerAlgo || '—'} token{setupForm.ratePerAlgo === '1' ? '' : 's'} per {setupForm.algoPerBundle || '1'} ALGO
+                  </div>
                   <span className="field-hint">
-                    Set at project creation — cannot be changed.
-                    {asaInfo?.decimals > 0
-                      ? ` With ${asaInfo.decimals} decimals, ${setupForm.ratePerAlgo} display token${setupForm.ratePerAlgo !== '1' ? 's' : ''}/ALGO = ${Math.round(Number(setupForm.ratePerAlgo) * Math.pow(10, asaInfo.decimals)).toLocaleString('en-US')} base units/ALGO stored on-chain.`
-                      : ''}
+                    Set at project creation — cannot be changed. Contributions below the
+                    ratio round down to whole tokens. Token decimals are read on-chain
+                    automatically during setup.
                   </span>
                 </div>
 
@@ -442,7 +445,7 @@ export default function MyProjects() {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Tokens to provide:</span>
                       <span className="mono" style={{ color: 'var(--text)' }}>
-                        {Math.floor((+setupForm.goalAlgo || 0) * (+setupForm.ratePerAlgo || 0) * Math.pow(10, asaDecimals)).toLocaleString('en-US')}
+                        {(Math.floor((+setupForm.goalAlgo || 0) * (+setupForm.ratePerAlgo || 0) / (+setupForm.algoPerBundle || 1)) * Math.pow(10, asaDecimals)).toLocaleString('en-US')}
                         {asaInfo?.symbol ? ` ${asaInfo.symbol}` : ''} base units
                       </span>
                     </div>

@@ -102,7 +102,7 @@ router.post('/', async (req, res) => {
     if (!address) return res.status(400).json({ error: 'Missing x-algo-address header' })
     const {
       appId: rawAppId, name, tagline, description, category,
-      websiteUrl, deckUrl, imageUrl, goalMicro, ratePerAlgo,
+      websiteUrl, deckUrl, imageUrl, goalMicro, ratePerAlgo, algoPerBundle,
       highlights,
       isDonation, seriesId, milestoneNumber, milestoneTitle,
       milestoneDescription, plannedMilestones, seriesGoalMicro,
@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
       appId, creatorAddress: address,
       name, tagline, description, category,
       websiteUrl, deckUrl, imageUrl, tokenName,
-      goalMicro, ratePerAlgo, highlights,
+      goalMicro, ratePerAlgo, algoPerBundle, highlights,
       isDonation, seriesId, milestoneNumber, milestoneTitle,
       milestoneDescription, plannedMilestones, seriesGoalMicro,
     })

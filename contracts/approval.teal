@@ -2,23 +2,23 @@
 txn ApplicationID
 int 0
 ==
-bnz main_l40
+bnz main_l43
 txn OnCompletion
 int UpdateApplication
 ==
-bnz main_l39
+bnz main_l42
 txn OnCompletion
 int DeleteApplication
 ==
-bnz main_l38
+bnz main_l41
 txn OnCompletion
 int CloseOut
 ==
-bnz main_l37
+bnz main_l40
 txn OnCompletion
 int OptIn
 ==
-bnz main_l36
+bnz main_l39
 txn OnCompletion
 int NoOp
 ==
@@ -379,8 +379,8 @@ assert
 txn Sender
 byte "contrib"
 app_local_get
-store 1
-load 1
+store 6
+load 6
 int 0
 >
 assert
@@ -389,7 +389,7 @@ int pay
 itxn_field TypeEnum
 txn Sender
 itxn_field Receiver
-load 1
+load 6
 itxn_field Amount
 int 0
 itxn_field Fee
@@ -432,13 +432,13 @@ int 4
 *
 int 100
 /
-store 3
+store 9
 byte "goal"
 app_global_get
-load 3
+load 9
 -
-store 4
-load 4
+store 10
+load 10
 int 0
 >
 assert
@@ -448,7 +448,7 @@ itxn_field TypeEnum
 byte "creator"
 app_global_get
 itxn_field Receiver
-load 4
+load 10
 itxn_field Amount
 int 0
 itxn_field Fee
@@ -477,12 +477,12 @@ assert
 txn Sender
 byte "contrib"
 app_local_get
-store 1
-load 1
+store 6
+load 6
 int 0
 >
 assert
-byte "rate"
+byte "tpb"
 app_global_get
 int 0
 !=
@@ -495,14 +495,22 @@ app_local_put
 int 1
 return
 main_l28:
-load 1
-byte "rate"
+load 6
+byte "tpb"
 app_global_get
 *
+byte "apb"
+app_global_get
 int 1000000
+*
 /
-store 2
-load 2
+store 7
+load 7
+byte "dec_factor"
+app_global_get
+*
+store 8
+load 8
 int 0
 >
 bz main_l27
@@ -514,7 +522,7 @@ app_global_get
 itxn_field XferAsset
 txn Sender
 itxn_field AssetReceiver
-load 2
+load 8
 itxn_field AssetAmount
 int 0
 itxn_field Fee
@@ -538,7 +546,7 @@ byte "goal"
 app_global_get
 <
 assert
-byte "rate"
+byte "tpb"
 app_global_get
 int 0
 !=
@@ -602,11 +610,11 @@ byte "raised"
 app_global_get
 gtxn 1 Amount
 +
-store 0
+store 5
 byte "raised"
-load 0
+load 5
 app_global_put
-load 0
+load 5
 byte "goal"
 app_global_get
 >=
@@ -673,6 +681,27 @@ global GroupSize
 int 2
 ==
 assert
+txna Assets 0
+asset_params_get AssetDecimals
+store 1
+store 0
+load 1
+assert
+int 10
+load 0
+exp
+store 2
+byte "dec_factor"
+load 2
+app_global_put
+byte "tpb"
+app_global_get
+int 0
+!=
+bnz main_l38
+int 0
+store 3
+main_l37:
 itxn_begin
 int axfer
 itxn_field TypeEnum
@@ -702,13 +731,7 @@ txna Assets 0
 ==
 assert
 gtxn 1 AssetAmount
-byte "goal"
-app_global_get
-byte "rate"
-app_global_get
-*
-int 1000000
-/
+load 3
 >=
 assert
 gtxn 1 CloseRemainderTo
@@ -721,7 +744,36 @@ global ZeroAddress
 assert
 int 1
 return
-main_l36:
+main_l38:
+byte "goal"
+app_global_get
+byte "tpb"
+app_global_get
+*
+int 18262276632972455936
+<=
+assert
+byte "goal"
+app_global_get
+byte "tpb"
+app_global_get
+*
+byte "apb"
+app_global_get
+int 1000000
+*
+/
+store 4
+load 4
+load 2
+*
+store 3
+load 3
+int 18262276632972455936
+<=
+assert
+b main_l37
+main_l39:
 byte "cancelled"
 app_global_get
 int 1
@@ -739,7 +791,7 @@ int 0
 app_local_put
 int 1
 return
-main_l37:
+main_l40:
 txn Sender
 byte "contrib"
 app_local_get
@@ -748,7 +800,7 @@ int 0
 assert
 int 1
 return
-main_l38:
+main_l41:
 txn Sender
 byte "admin"
 app_global_get
@@ -761,12 +813,12 @@ int 1
 assert
 int 1
 return
-main_l39:
+main_l42:
 int 0
 return
-main_l40:
+main_l43:
 txn NumAppArgs
-int 4
+int 5
 ==
 assert
 txna ApplicationArgs 0
@@ -795,6 +847,11 @@ txna ApplicationArgs 1
 btoi
 int 100000000000000
 <=
+assert
+txna ApplicationArgs 4
+btoi
+int 0
+>
 assert
 txna ApplicationArgs 3
 btoi
@@ -836,7 +893,7 @@ int 100000
 /
 int 10000000
 <
-bnz main_l43
+bnz main_l46
 txna ApplicationArgs 1
 btoi
 txna ApplicationArgs 3
@@ -844,7 +901,7 @@ btoi
 *
 int 100000
 /
-main_l42:
+main_l45:
 >=
 assert
 gtxn 1 CloseRemainderTo
@@ -865,8 +922,12 @@ byte "goal"
 txna ApplicationArgs 1
 btoi
 app_global_put
-byte "rate"
+byte "tpb"
 txna ApplicationArgs 2
+btoi
+app_global_put
+byte "apb"
+txna ApplicationArgs 4
 btoi
 app_global_put
 byte "days"
@@ -887,6 +948,9 @@ app_global_put
 byte "asa_id"
 int 0
 app_global_put
+byte "dec_factor"
+int 0
+app_global_put
 byte "funded_round"
 int 0
 app_global_put
@@ -901,6 +965,6 @@ int 0
 app_global_put
 int 1
 return
-main_l43:
+main_l46:
 int 10000000
-b main_l42
+b main_l45
