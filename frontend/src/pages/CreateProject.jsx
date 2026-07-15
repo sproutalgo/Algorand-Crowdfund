@@ -454,7 +454,7 @@ export default function CreateProject() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         <input id="cp-rate" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ width: 72, flexShrink: 0 }} value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
-                        <span className="faint" style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>token{form.ratePerAlgo === '1' ? '' : 's'} per</span>
+                        <span className="faint" style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>token(s) per</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         <input id="cp-apb" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ width: 72, flexShrink: 0 }} value={form.algoPerBundle} onChange={onlyInt('algoPerBundle')} />
