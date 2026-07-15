@@ -379,8 +379,8 @@ assert
 txn Sender
 byte "contrib"
 app_local_get
-store 6
-load 6
+store 12
+load 12
 int 0
 >
 assert
@@ -389,7 +389,7 @@ int pay
 itxn_field TypeEnum
 txn Sender
 itxn_field Receiver
-load 6
+load 12
 itxn_field Amount
 int 0
 itxn_field Fee
@@ -432,13 +432,13 @@ int 4
 *
 int 100
 /
-store 9
+store 15
 byte "goal"
 app_global_get
-load 9
+load 15
 -
-store 10
-load 10
+store 16
+load 16
 int 0
 >
 assert
@@ -448,7 +448,7 @@ itxn_field TypeEnum
 byte "creator"
 app_global_get
 itxn_field Receiver
-load 10
+load 16
 itxn_field Amount
 int 0
 itxn_field Fee
@@ -477,8 +477,8 @@ assert
 txn Sender
 byte "contrib"
 app_local_get
-store 6
-load 6
+store 12
+load 12
 int 0
 >
 assert
@@ -486,6 +486,11 @@ byte "tpb"
 app_global_get
 int 0
 !=
+byte "asa_id"
+app_global_get
+int 0
+!=
+&&
 bnz main_l28
 main_l27:
 txn Sender
@@ -495,7 +500,7 @@ app_local_put
 int 1
 return
 main_l28:
-load 6
+load 12
 byte "tpb"
 app_global_get
 *
@@ -504,13 +509,13 @@ app_global_get
 int 1000000
 *
 /
-store 7
-load 7
+store 13
+load 13
 byte "dec_factor"
 app_global_get
 *
-store 8
-load 8
+store 14
+load 14
 int 0
 >
 bz main_l27
@@ -522,7 +527,7 @@ app_global_get
 itxn_field XferAsset
 txn Sender
 itxn_field AssetReceiver
-load 8
+load 14
 itxn_field AssetAmount
 int 0
 itxn_field Fee
@@ -610,11 +615,11 @@ byte "raised"
 app_global_get
 gtxn 1 Amount
 +
-store 5
+store 11
 byte "raised"
-load 5
+load 11
 app_global_put
-load 5
+load 11
 byte "goal"
 app_global_get
 >=
@@ -687,12 +692,41 @@ store 1
 store 0
 load 1
 assert
+txna Assets 0
+asset_params_get AssetClawback
+store 3
+store 2
+load 3
+assert
+load 2
+global ZeroAddress
+==
+assert
+txna Assets 0
+asset_params_get AssetFreeze
+store 5
+store 4
+load 5
+assert
+load 4
+global ZeroAddress
+==
+assert
+txna Assets 0
+asset_params_get AssetDefaultFrozen
+store 7
+store 6
+load 7
+assert
+load 6
+!
+assert
 int 10
 load 0
 exp
-store 2
+store 8
 byte "dec_factor"
-load 2
+load 8
 app_global_put
 byte "tpb"
 app_global_get
@@ -700,7 +734,7 @@ int 0
 !=
 bnz main_l38
 int 0
-store 3
+store 9
 main_l37:
 itxn_begin
 int axfer
@@ -731,10 +765,10 @@ txna Assets 0
 ==
 assert
 gtxn 1 AssetAmount
-load 3
+load 9
 >=
 assert
-gtxn 1 CloseRemainderTo
+gtxn 1 AssetCloseTo
 global ZeroAddress
 ==
 assert
@@ -763,12 +797,12 @@ app_global_get
 int 1000000
 *
 /
-store 4
-load 4
-load 2
+store 10
+load 10
+load 8
 *
-store 3
-load 3
+store 9
+load 9
 int 18262276632972455936
 <=
 assert

@@ -74,6 +74,8 @@ from pyteal import *
 #   balance to admin).
 # - An investor who never finalizes (success) before the success grace close
 #   forfeits their tokens; the ASA remnant goes to the admin.
+# - An investor who never refunds (failure/cancel) before the failure grace
+#   close forfeits their contribution; the ALGO remnant goes to the admin.
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 #GRACE_PERIOD_ROUNDS = Int(5_580_866)   # ~6 months at 2.8 s/block
@@ -217,6 +219,9 @@ def approval_program():
     # ── setup ───────────────────────────────────────────────────────────────────
     # Group: [0] AppCall("setup"), [1] AssetTransfer(tokens from creator to app)
     asa_decimals = AssetParam.decimals(Txn.assets[0])
+    asa_clawback = AssetParam.clawback(Txn.assets[0])
+    asa_freeze   = AssetParam.freeze(Txn.assets[0])
+    asa_dfrozen  = AssetParam.defaultFrozen(Txn.assets[0])
     df           = ScratchVar(TealType.uint64)   # 10^decimals
     pool_needed  = ScratchVar(TealType.uint64)   # base units the pool must cover
     whole_cap    = ScratchVar(TealType.uint64)   # max whole tokens at full goal
@@ -234,6 +239,22 @@ def approval_program():
         # store dec_factor = 10^decimals for use at finalize.
         asa_decimals,
         Assert(asa_decimals.hasValue()),
+        # Reject rug-capable tokens: clawback and freeze must be permanently
+        # disabled (a zero clawback/freeze address is immutable on Algorand —
+        # the manager can never re-add it), and the asset must not be
+        # default-frozen. Without these checks a creator could claw back the
+        # deposited pool after funding, or freeze the app's holding — which
+        # blocks asset_close_to, so asa_id could never reset to 0 and the
+        # ALGO close (admin_claim) would be trapped forever.
+        asa_clawback,
+        Assert(asa_clawback.hasValue()),
+        Assert(asa_clawback.value() == Global.zero_address()),
+        asa_freeze,
+        Assert(asa_freeze.hasValue()),
+        Assert(asa_freeze.value() == Global.zero_address()),
+        asa_dfrozen,
+        Assert(asa_dfrozen.hasValue()),
+        Assert(Not(asa_dfrozen.value())),
         df.store(Exp(Int(10), asa_decimals.value())),
         App.globalPut(KEY_DEC_FACTOR, df.load()),
         # Overflow guard (token campaigns only): prove no finalize intermediate can
@@ -265,7 +286,7 @@ def approval_program():
         Assert(Gtxn[1].asset_receiver() == app_addr),
         Assert(Gtxn[1].xfer_asset() == Txn.assets[0]),
         Assert(Gtxn[1].asset_amount() >= pool_needed.load()),
-        Assert(Gtxn[1].close_remainder_to() == Global.zero_address()),
+        Assert(Gtxn[1].asset_close_to() == Global.zero_address()),
         Assert(Gtxn[1].rekey_to() == Global.zero_address()),
         Approve()
     )
@@ -319,7 +340,10 @@ def approval_program():
         #   whole_tokens = floor( contrib * tpb / (apb * 1e6) )
         #   tokens_due   = whole_tokens * dec_factor
         # Donation campaigns (tpb==0): skip token distribution.
-        If(tpb != Int(0)).Then(Seq(
+        # Skip token distribution if the ASA holding has already been swept
+        # (asa_id reset to 0 post-grace) — tokens are forfeited per the grace
+        # rules, but contrib must still zero so the investor can close out.
+        If(And(tpb != Int(0), asa_id != Int(0))).Then(Seq(
             whole_tokens.store((contrib_amt.load() * tpb) / (apb * Int(1_000_000))),
             tokens_due.store(whole_tokens.load() * dec_factor),
             If(tokens_due.load() > Int(0)).Then(Seq(
@@ -476,7 +500,9 @@ def approval_program():
     #     → close all remaining ALGO (the ~4% fee, plus any unclaimed creator
     #       payout — see finding D, accepted) to the ADMIN.
     #   Failure close: failed, failure_grace_expired
-    #     → close residual ALGO to the CREATOR.
+    #     → close residual ALGO (unclaimed refunds + any seed) to the ADMIN,
+    #       symmetric with the success side. Disclosed on-platform: investors
+    #       who never refund within the failure grace window forfeit to admin.
     #
     # Immediate withdrawals are unaffected: creator_claim (success) and refund
     # (failure) remain available the moment the outcome is decided; only the
