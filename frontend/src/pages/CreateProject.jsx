@@ -451,11 +451,15 @@ export default function CreateProject() {
                 {!isDonation && (
                   <div className="field">
                     <label htmlFor="cp-rate">Exchange rate *</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <input id="cp-rate" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ maxWidth: 120 }} value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
-                      <span className="faint" style={{ fontSize: 13.5 }}>token{form.ratePerAlgo === '1' ? '' : 's'} per</span>
-                      <input id="cp-apb" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ maxWidth: 120 }} value={form.algoPerBundle} onChange={onlyInt('algoPerBundle')} />
-                      <span className="faint" style={{ fontSize: 13.5 }}>ALGO</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <input id="cp-rate" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ width: 72, flexShrink: 0 }} value={form.ratePerAlgo} onChange={onlyInt('ratePerAlgo')} />
+                        <span className="faint" style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>token{form.ratePerAlgo === '1' ? '' : 's'} per</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <input id="cp-apb" className="input no-spin" type="text" inputMode="numeric" placeholder="1" style={{ width: 72, flexShrink: 0 }} value={form.algoPerBundle} onChange={onlyInt('algoPerBundle')} />
+                        <span className="faint" style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>ALGO</span>
+                      </div>
                     </div>
                     <span className="field-hint">
                       How many whole tokens a backer receives per amount of ALGO. Example: "1 token per 10 ALGO" means a 10 ALGO contribution yields 1 token, and amounts below the ratio round down. Token decimals are handled automatically during setup.
