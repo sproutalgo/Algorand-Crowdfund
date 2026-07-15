@@ -112,6 +112,37 @@ export default function MyProjects() {
       const asset = await algodClient.getAssetByID(id).do()
       const p = asset.asset?.params ?? asset.params ?? asset
       const decimals = Number(p.decimals ?? 0)
+
+      // The contract rejects rug-capable tokens at setup: a token is incompatible
+      // if it has a clawback address, a freeze address, or is default-frozen.
+      // We mirror that check here so the creator sees a clear reason before
+      // wasting a setup transaction that the contract would reject anyway.
+      // algosdk v3 returns camelCase fields; addresses may be Address objects or
+      // strings, and a disabled role is absent, empty, or the zero address.
+      const ZERO = algosdk.encodeAddress(new Uint8Array(32))
+      const addrStr = (a) => (a == null ? '' : (typeof a === 'string' ? a : a.toString()))
+      const isSet = (a) => { const s = addrStr(a); return !!s && s !== ZERO }
+      const clawback      = p.clawback ?? p['clawback']
+      const freeze        = p.freeze ?? p['freeze']
+      const defaultFrozen = Boolean(p.defaultFrozen ?? p['default-frozen'] ?? false)
+      const hasClawback   = isSet(clawback)
+      const hasFreeze     = isSet(freeze)
+
+      if (hasClawback || hasFreeze || defaultFrozen) {
+        const reasons = []
+        if (hasClawback)   reasons.push('a clawback address')
+        if (hasFreeze)     reasons.push('a freeze address')
+        if (defaultFrozen) reasons.push('default-frozen enabled')
+        setAsaError(
+          `This token has ${reasons.join(' and ')}, which Sprout doesn't allow — ` +
+          `these let the token creator claw back or freeze backers' tokens after ` +
+          `funding. Use a token with clawback and freeze permanently disabled (set to empty).`
+        )
+        setAsaInfo(null)
+        setAsaDecimals(0)
+        return
+      }
+
       setAsaDecimals(decimals)
       setAsaInfo({
         symbol: p['unit-name'] ?? p.unitName ?? '',
