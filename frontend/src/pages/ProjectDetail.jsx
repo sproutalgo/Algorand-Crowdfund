@@ -813,7 +813,7 @@ export default function ProjectDetail() {
                     appAddress && { label: 'Escrow address', val: shortAddr(appAddress), copy: appAddress, href: `${EXPLORER}/account/${appAddress}` },
                     safeGs.creator && { label: 'Creator', val: shortAddr(safeGs.creator), copy: safeGs.creator, href: `${EXPLORER}/account/${safeGs.creator}` },
                     safeGs.asa_id && { label: 'ASA / Token', val: String(safeGs.asa_id), copy: String(safeGs.asa_id), href: `${EXPLORER}/asset/${safeGs.asa_id}` },
-                    rate && { label: 'Token rate', val: `${tokensPerAlgo > 0 ? formatTokens(rate) : rate} / ALGO`, copy: null },
+                    tpb > 0 && { label: 'Exchange rate', val: `${tpb.toLocaleString('en-US')} token${tpb === 1 ? '' : 's'} / ${apb} ALGO`, copy: null },
                     deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString('en-US'), copy: null },
                     deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString('en-US'), copy: null },
                     { label: 'Network', val: 'Algorand Testnet', copy: null },
