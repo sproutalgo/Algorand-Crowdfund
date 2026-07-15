@@ -142,7 +142,7 @@ export default function CreateProject() {
         tokensPerBundle: tpbArg, algoPerBundle: apbArg, durationDays: durDays,
       })
 
-      addToast(`Listing fee: ${formatAlgo(listingFee, { decimals: 3 })} ALGO — approve both transactions.`, 'info', 6000)
+      addToast(`Listing fee: ${formatAlgo(listingFee, { decimals: 4, smart: true })} ALGO — approve both transactions.`, 'info', 6000)
       const confirmation = await signAndSend(signTransactions, txns.map(t => t.toByte()))
       const newAppId = Number(confirmation['application-index'] ?? confirmation.applicationIndex ?? 0)
 
@@ -483,7 +483,7 @@ export default function CreateProject() {
                     : <span className="field-hint">
                         Minimum {MIN_DAYS} day, maximum {MAX_DAYS} days.
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && listingFeeAlgo
-                          ? ` Listing fee: ${fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO.`
+                          ? ` Listing fee: ${fmtAlgo(listingFeeAlgo, { decimals: 4, smart: true })} ALGO.`
                           : ''}
                         {durDays >= MIN_DAYS && durDays <= MAX_DAYS && durRounds > 0
                           ? ` Duration is stored on-chain as ${durRounds.toLocaleString('en-US')} Algorand rounds (~2.8 seconds each). Displayed days are approximate.`
@@ -519,7 +519,7 @@ export default function CreateProject() {
                   <p className="muted" style={{ marginTop: 12, maxWidth: 420, marginInline: 'auto', lineHeight: 1.6 }}>
                     <b style={{ color: 'var(--text)' }}>{form.name}</b> will raise {fmtAlgo(goal)} ALGO over {durDays} days
                     {!isDonation ? ` at ${rate} token${rate === 1 ? '' : 's'} per ${algoPerBundle} ALGO` : ' as a contribution campaign'}.
-                    Listing fee: {fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO paid at deploy.
+                    Listing fee: {fmtAlgo(listingFeeAlgo, { decimals: 4, smart: true })} ALGO paid at deploy.
                     Success fee: {fmtAlgo(successFeeAlgo, { decimals: 2 })} ALGO (4%) if funded.
                   </p>
                   <button
@@ -586,7 +586,7 @@ export default function CreateProject() {
               { l: 'Funding goal',      v: goal ? `${fmtAlgo(goal)} ALGO` : '—' },
               ...(!isDonation ? [{ l: 'Exchange rate', v: rate ? `${rate} token${rate === 1 ? '' : 's'} / ${algoPerBundle} ALGO` : '—' }] : []),
               { l: 'Duration',          v: durDays >= MIN_DAYS && durDays <= MAX_DAYS ? `${durDays} days` : '—' },
-              { l: 'Listing fee',       v: listingFeeAlgo != null ? `${fmtAlgo(listingFeeAlgo, { decimals: 3 })} ALGO` : '—' },
+              { l: 'Listing fee',       v: listingFeeAlgo != null ? `${fmtAlgo(listingFeeAlgo, { decimals: 4, smart: true })} ALGO` : '—' },
               { l: 'Success fee (4%)',  v: successFeeAlgo != null ? `${fmtAlgo(successFeeAlgo, { decimals: 2 })} ALGO` : '—' },
               ...(!isDonation && tokensNeeded ? [{ l: 'Tokens to provide', v: fmtAlgo(tokensNeeded) }] : []),
               ...(milestoneTitle ? [{ l: 'Milestone', v: milestoneTitle }] : []),

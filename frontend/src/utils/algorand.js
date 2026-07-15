@@ -43,7 +43,7 @@ export function formatAlgo(microAlgos, opts = {}) {
  */
 export function formatAlgoAmount(algo, opts = {}) {
   if (typeof opts === 'number') opts = { decimals: opts }
-  const { decimals = 2, compact = false } = opts
+  const { decimals = 2, compact = false, smart = false } = opts
   const n = typeof algo === 'bigint' ? Number(algo) : Number(algo) || 0
 
   if (compact && Math.abs(n) >= 1000) {
@@ -53,6 +53,16 @@ export function formatAlgoAmount(algo, opts = {}) {
       minimumFractionDigits: 0,
       maximumFractionDigits: n % 1000 === 0 ? 0 : 1,
     })}k`
+  }
+
+  // Smart decimals: no fractional digits when the value is whole; otherwise
+  // show up to `decimals` places, trimming trailing zeros (15 -> "15",
+  // 15.5 -> "15.5", 15.125 -> "15.125"). `decimals` is the maximum here.
+  if (smart) {
+    return n.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals,
+    })
   }
 
   return n.toLocaleString('en-US', {

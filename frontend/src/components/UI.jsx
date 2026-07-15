@@ -213,8 +213,8 @@ export function SkeletonCard() {
  */
 export function fmtAlgo(n, opts = {}) {
   if (typeof opts === 'number') opts = { decimals: opts }
-  const { decimals = 0, compact = false } = opts
-  return formatAlgoAmount(n, { decimals, compact })
+  const { decimals = 0, compact = false, smart = false } = opts
+  return formatAlgoAmount(n, { decimals, compact, smart })
 }
 
 export function pctNum(raised, goal) {
