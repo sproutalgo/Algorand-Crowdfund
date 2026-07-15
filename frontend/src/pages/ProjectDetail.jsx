@@ -301,7 +301,8 @@ export default function ProjectDetail() {
   const raised      = Number(safeGs.raised   ?? 0)
   const goal        = Number(safeGs.goal     ?? meta?.goal_micro ?? 1)
   const deadline    = Number(safeGs.deadline ?? 0)
-  const rate        = Number(safeGs.rate     ?? 0)
+  const tpb         = Number(safeGs.tpb ?? meta?.rate_per_algo ?? 0)   // tokens_per_bundle
+  const apb         = Number(safeGs.apb ?? meta?.algo_per_bundle ?? 1) // algo_per_bundle (>=1)
   const fundedRound = Number(safeGs.funded_round ?? 0)
   const asaIdOnChain = Number(safeGs.asa_id ?? 0)
   const isRefunded     = !!meta?.is_refunded
@@ -333,9 +334,18 @@ export default function ProjectDetail() {
     const name  = asaUnitName || meta?.token_name || 'tokens'
     return `${whole.toLocaleString('en-US', { maximumFractionDigits: asaDecimals })} ${name}`
   }
-  const tokensPerAlgo = rate > 0 ? baseUnitsToTokens(rate) : 0
-  const tokensYouGet  = contributeAmt && rate
-    ? baseUnitsToTokens(Math.floor((Math.floor(parseFloat(contributeAmt) || 0) * 1_000_000 * rate) / 1_000_000))
+  // Whole tokens a contribution of `algoAmt` ALGO yields, mirroring the contract:
+  //   whole = floor(contrib_micro * tpb / (apb * 1e6))   [floor to whole tokens]
+  // Returns whole tokens (not base units).
+  function wholeTokensFor(algoAmt) {
+    if (!tpb) return 0
+    const micro = Math.floor(algoAmt) * 1_000_000
+    return Math.floor((micro * tpb) / (apb * 1_000_000))
+  }
+  // Display "X tokens per Y ALGO" ratio.
+  const tokensPerAlgo = tpb > 0 ? tpb / apb : 0
+  const tokensYouGet  = contributeAmt && tpb
+    ? wholeTokensFor(parseFloat(contributeAmt) || 0)
     : 0
 
   const creatorClaimed = Number(safeGs.creator_claimed ?? 0) === 1
@@ -578,7 +588,7 @@ export default function ProjectDetail() {
                     onClick={handleFinalize}
                     disabled={actioning}
                   >
-                    {actioning ? 'Processing…' : `Claim ${formatTokens(Math.floor((myContrib * rate) / 1_000_000))}`}
+                    {actioning ? 'Processing…' : `Claim ${wholeTokensFor(myContrib / 1_000_000).toLocaleString('en-US')} ${asaUnitName || meta?.token_name || 'tokens'}`}
                   </button>
                 )}
                 {canClaim && meta.is_donation && (
@@ -680,9 +690,9 @@ export default function ProjectDetail() {
                 </div>
                 {tokensPerAlgo > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', borderRadius: 'var(--r-sm)', marginBottom: 10 }}>
-                    <span className="faint" style={{ fontSize: 13 }}>1 ALGO</span>
+                    <span className="faint" style={{ fontSize: 13 }}>{apb} ALGO</span>
                     <span className="faint">→</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent)', fontWeight: 600 }}>{formatTokens(rate)}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent)', fontWeight: 600 }}>{tpb.toLocaleString('en-US')} {asaUnitName || meta?.token_name || 'tokens'}</span>
                   </div>
                 )}
                 <div className="amt-input">
@@ -720,7 +730,7 @@ export default function ProjectDetail() {
                 {tokensYouGet > 0 && (
                   <div className="receive-row">
                     <span className="faint" style={{ fontSize: 13.5 }}>You'll receive</span>
-                    <span className="r-val">{formatTokens(Math.floor((Math.floor(parseFloat(contributeAmt) || 0) * 1_000_000 * rate) / 1_000_000))}</span>
+                    <span className="r-val">{tokensYouGet.toLocaleString('en-US')} {asaUnitName || meta?.token_name || 'tokens'}</span>
                   </div>
                 )}
                 <button
