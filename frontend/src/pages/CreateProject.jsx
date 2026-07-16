@@ -215,7 +215,7 @@ export default function CreateProject() {
       <div className="launch-head">
         <span className="eyebrow">Create</span>
         <h1 style={{ marginTop: 12 }}>Launch your project</h1>
-        <p>Deploy a permissionless crowdfunding contract to Algorand Testnet. Takes about two minutes.</p>
+        <p>Deploy a permissionless crowdfunding contract to Algorand Testnet. Takes about five minutes.</p>
       </div>
 
       <div className="stepper">
