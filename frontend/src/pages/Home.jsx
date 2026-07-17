@@ -138,7 +138,10 @@ export default function Home() {
     const isCancelled = status === 'cancelled'
     if (m.is_hidden) return false
     if (isCancelled && !showCancelled) return false
-    if (!isCancelled && !p.gs?.asa_id && !m.is_donation && status !== 'distributed') return false
+    // Hide only campaigns that genuinely still need setup — NOT failed campaigns
+    // whose asa_id reset to 0 after the creator reclaimed the pool, since backers
+    // must still be able to reach those for refunds.
+    if (status === 'needs-setup') return false
     if (m.is_donation && !showDonations) return false
     if (search) {
       const q = search.toLowerCase()
