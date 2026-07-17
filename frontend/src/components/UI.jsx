@@ -247,15 +247,22 @@ export function deriveProjectStatus(p, currentRound = 0) {
   if (m.is_funded) return 'funded'
   if (m.is_cancelled || Number(p.gs?.cancelled ?? 0) === 1) return 'cancelled'
   if (m.is_refunded) return 'failed'
-  if (!p.gs?.asa_id && !p.meta?.is_donation) return 'needs-setup'
+
   const raised      = Number(p.gs?.raised       ?? 0)
   const goal        = Number(p.gs?.goal         ?? 1)
   const fundedRound = Number(p.gs?.funded_round ?? 0)
   const deadline    = Number(p.gs?.deadline     ?? 0)
-  // funded_round is set permanently when the goal is first reached
+
+  // Terminal states must be decided BEFORE the needs-setup fallback, because a
+  // failed campaign whose creator has reclaimed the token pool has asa_id reset
+  // to 0 — it must still read as 'failed', never revert to 'needs-setup'.
+  // funded_round is set permanently when the goal is first reached.
   if (fundedRound > 0 || raised >= goal) return 'funded'
-  // Deadline passed without reaching goal — campaign failed
+  // Deadline passed without reaching goal — campaign failed (regardless of asa_id).
   if (deadline > 0 && currentRound > deadline) return 'failed'
+
+  // Still active: only now does a missing ASA mean "not yet set up".
+  if (!p.gs?.asa_id && !p.meta?.is_donation) return 'needs-setup'
   return 'active'
 }
 
