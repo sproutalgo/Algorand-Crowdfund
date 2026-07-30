@@ -199,7 +199,7 @@ export default function Home() {
           <div>
             <span className="badge badge-success">
               <span className="badge-dot" style={{ animation: 'pulse-dot 2s infinite' }} />
-              Live on Algorand Testnet
+              Live on Algorand Mainnet
             </span>
             <h1 style={{ marginTop: 22 }}>
               Algorand's own — <span className="accent">grassroots</span> crowdfunding platform.<br />
