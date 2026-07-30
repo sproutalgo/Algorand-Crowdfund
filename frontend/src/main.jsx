@@ -18,7 +18,7 @@ const walletManager = new WalletManager({
       options: { projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID },
     },
   ],
-  network: NetworkId.TESTNET,
+  network: NetworkId.MAINNET,
 })
 
 ReactDOM.createRoot(document.getElementById('root')).render(
