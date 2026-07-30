@@ -13,6 +13,31 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms         from './pages/Terms'
 import DemoProject   from './pages/DemoProject'
 import DonationSetup from './pages/DonationSetup'
+import ComingSoon    from './pages/ComingSoon'
+
+/**
+ * Maintenance gate. When VITE_MAINTENANCE === 'true' the public sees ComingSoon.
+ * Bypass: visit any URL with ?preview=<VITE_PREVIEW_KEY> once; it's remembered
+ * in sessionStorage so you can browse the live site normally afterward.
+ * Note: this is a soft gate (client-side) — fine for holding the public off
+ * before launch, not a security boundary.
+ */
+function useMaintenanceGate() {
+  const maintenance = import.meta.env.VITE_MAINTENANCE === 'true'
+  if (!maintenance) return false
+
+  const previewKey = import.meta.env.VITE_PREVIEW_KEY || 'preview'
+  try {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('preview') === previewKey) {
+      sessionStorage.setItem('sprout_preview', '1')
+    }
+    if (sessionStorage.getItem('sprout_preview') === '1') return false
+  } catch {
+    // sessionStorage unavailable — fall through to showing the gate
+  }
+  return true
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -23,6 +48,10 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  if (useMaintenanceGate()) {
+    return <ComingSoon />
+  }
+
   return (
     <ToastProvider>
       <BrowserRouter>
