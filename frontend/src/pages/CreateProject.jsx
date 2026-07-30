@@ -339,7 +339,7 @@ export default function CreateProject() {
                       {form.highlights.map((h, i) => (
                         <div className="hi-row" key={i}>
                           <span className="hi-bullet"><Icon.check /></span>
-                          <input id={`highlight-${i}`} name={`highlight-${i}`} aria-label={`Highlight ${i + 1}`} className="input" placeholder={['e.g. Audited by two independent firms', 'e.g. Live on testnet with 1,400+ wallets', 'e.g. Backed by the Algorand Foundation'][i]} value={h} onChange={setHi(i)} />
+                          <input id={`highlight-${i}`} name={`highlight-${i}`} aria-label={`Highlight ${i + 1}`} className="input" placeholder={['e.g. Audited by two independent firms', 'e.g. Live on mainnet with 1,400+ wallets', 'e.g. Backed by the Algorand Foundation'][i]} value={h} onChange={setHi(i)} />
                         </div>
                       ))}
                     </div>
@@ -370,7 +370,7 @@ export default function CreateProject() {
 
                   <div className="field" style={{ marginBottom: 12 }}>
                     <label htmlFor="cp-milestone-title">This milestone</label>
-                    <input id="cp-milestone-title" className="input" placeholder="e.g. This Milestone — Testnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
+                    <input id="cp-milestone-title" className="input" placeholder="e.g. This Milestone — Mainnet Launch" value={milestoneTitle} onChange={e => setMilestoneTitle(e.target.value)} />
                   </div>
                   <div className="field" style={{ marginBottom: 12 }}>
                     <label htmlFor="cp-milestone-desc">Milestone description</label>
