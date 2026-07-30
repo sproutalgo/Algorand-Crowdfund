@@ -14,8 +14,8 @@ import {
 } from '../utils/transactions'
 import { useToast } from '../context/ToastContext'
 
-// Lora is AlgoKit's official block explorer; matches the app's testnet config.
-const EXPLORER = 'https://lora.algokit.io/testnet'
+// Lora is AlgoKit's official block explorer; matches the app's mainnet config.
+const EXPLORER = 'https://lora.algokit.io/mainnet'
 import {
   Cover, StatusBadge, Progress, IdTag, Icon, Identicon,
   fmtAlgo, pctNum, daysLeftLabel, deriveProjectStatus, categoryHue, shortAddr,
