@@ -177,7 +177,7 @@ export default function Layout({ children }) {
       <footer className="footer">
         <div className="footer-inner wrap">
           <SproutLogo height={18} color={theme === 'dark' ? '#EAF2EC' : '#11271B'} />
-          <span>Permissionless crowdfunding on Algorand Testnet</span>
+          <span>Permissionless crowdfunding on Algorand Mainnet</span>
           <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             <Link to="/privacy" style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Privacy Policy</Link>
             <Link to="/terms"   style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Terms &amp; Conditions</Link>
