@@ -78,10 +78,8 @@ from pyteal import *
 #   close forfeits their contribution; the ALGO remnant goes to the admin.
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-#GRACE_PERIOD_ROUNDS = Int(5_580_866)   # ~6 months at 2.8 s/block
-#ROUNDS_PER_DAY      = Int(30_8577)      # 86400 / 2.8 rounded
-GRACE_PERIOD_ROUNDS = Int(10)      # was Int(5_580_866)
-ROUNDS_PER_DAY      = Int(10)      # was Int(30_857)
+GRACE_PERIOD_ROUNDS = Int(5_580_866)   # ~6 months at 2.8 s/block
+ROUNDS_PER_DAY      = Int(30_857)      # 86400 / 2.8 rounded
 MIN_DAYS            = Int(1)
 MAX_DAYS            = Int(100)
 MAX_GOAL            = Int(100_000_000_000_000)  # 100 million ALGO in microAlgos
