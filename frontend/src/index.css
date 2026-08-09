@@ -552,7 +552,7 @@ input.no-spin { -moz-appearance: textfield; }
 .creator-av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(140deg, var(--accent-2), var(--accent)); flex-shrink: 0; }
 .detail-section { margin-top: 38px; }
 .detail-section h3 { font-size: 21px; margin-bottom: 14px; }
-.detail-body { font-size: 15.5px; line-height: 1.75; color: var(--text-muted); }
+.detail-body { font-size: 15.5px; line-height: 1.75; color: var(--text-muted); white-space: pre-line; }
 .highlight-list { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .highlight-list li { display: flex; gap: 11px; align-items: flex-start; font-size: 15px; color: var(--text); }
 .highlight-list svg { width: 19px; height: 19px; color: var(--success); flex-shrink: 0; margin-top: 1px; }
