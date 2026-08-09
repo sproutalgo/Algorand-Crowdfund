@@ -114,7 +114,7 @@ function SeriesTimeline({ seriesId, currentAppId, meta, liveRaised = 0 }) {
                   {!isComplete && !isFunded && !isCurrent && <span style={{ fontSize: 11, padding: '2px 7px', background: 'var(--surface-2)', color: 'var(--text-muted)', borderRadius: 4 }}>In progress</span>}
                 </div>
                 {m.milestone_description && (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{m.milestone_description}</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{m.milestone_description}</p>
                 )}
                 {m.goal_micro && (
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -146,7 +146,7 @@ function SeriesTimeline({ seriesId, currentAppId, meta, liveRaised = 0 }) {
                 {m.title} <span style={{ fontSize: 11, padding: '2px 7px', background: 'var(--surface-2)', color: 'var(--text-muted)', borderRadius: 4 }}>Upcoming</span>
               </div>
               {m.description && (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{m.description}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{m.description}</p>
               )}
             </div>
           </div>
@@ -816,7 +816,7 @@ export default function ProjectDetail() {
                     tpb > 0 && { label: 'Exchange rate', val: `${tpb.toLocaleString('en-US')} token${tpb === 1 ? '' : 's'} / ${apb} ALGO`, copy: null },
                     deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString('en-US'), copy: null },
                     deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString('en-US'), copy: null },
-                    { label: 'Network', val: 'Algorand Mainnet', copy: null },
+                    { label: 'Network', val: 'Algorand Testnet', copy: null },
                   ].filter(Boolean).map(({ label, val, copy, href }) => (
                     <div className="contract-row" key={label}>
                       <span>{label}</span>
