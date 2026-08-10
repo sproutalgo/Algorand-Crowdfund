@@ -816,7 +816,7 @@ export default function ProjectDetail() {
                     tpb > 0 && { label: 'Exchange rate', val: `${tpb.toLocaleString('en-US')} token${tpb === 1 ? '' : 's'} / ${apb} ALGO`, copy: null },
                     deadline > 0 && { label: 'Deadline round', val: deadline.toLocaleString('en-US'), copy: null },
                     deadline > 0 && currentRound > 0 && { label: 'Rounds remaining', val: Math.max(0, deadline - currentRound).toLocaleString('en-US'), copy: null },
-                    { label: 'Network', val: 'Algorand Testnet', copy: null },
+                    { label: 'Network', val: 'Algorand Mainnet', copy: null },
                   ].filter(Boolean).map(({ label, val, copy, href }) => (
                     <div className="contract-row" key={label}>
                       <span>{label}</span>
