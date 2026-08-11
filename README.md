@@ -1,142 +1,235 @@
-# AlgoLaunch — Algorand Crowdfunding Platform
+# Sprout — Grassroots Crowdfunding on Algorand
 
-A full-stack permissionless crowdfunding platform on Algorand. Developers post pitch decks and set funding parameters; investors contribute ALGO and receive project tokens on successful funding.
+Sprout is a **non-custodial** crowdfunding platform on Algorand. Each campaign is
+backed by its own independent smart contract — funds are held by the contract,
+never by the platform. Backers are refunded automatically if a campaign doesn't
+reach its goal. Creators can run **reward campaigns** (backers receive a project
+token) or **contribution campaigns** (no token distribution).
+
+The founding thesis: Algorand has many capable builders with working projects but
+no clean, honest path to community funding. Sprout is built to close that gap —
+flat, transparent fees, no platform token, no cut of project tokens, and a
+deliberate "backer, not investor" framing.
 
 ---
 
 ## Architecture
 
 ```
-algorand-crowdfund/
-├── contracts/          # PyTeal smart contract
-│   ├── crowdfund.py    # Approval + clear programs
-│   ├── compile.py      # Compile script → approval.teal / clear.teal
+Algorand-Crowdfund/
+├── contracts/              # PyTeal smart contract (source of truth for funds)
+│   ├── crowdfund.py        # Approval + clear programs
+│   ├── compile.py          # Compiles crowdfund.py -> approval.teal / clear.teal
 │   └── requirements.txt
-└── frontend/           # React + Vite frontend
-    ├── src/
-    │   ├── components/ # Layout, ConnectWallet, ProjectCard, Account
-    │   ├── pages/      # Home, ProjectDetail, CreateProject, MyProjects
-    │   ├── utils/      # algorand.js, transactions.js, projectStore.js
-    │   └── context/    # ToastContext
-    ├── .env.example
-    └── package.json
+├── frontend/               # React + Vite (deployed on Vercel)
+│   └── src/
+│       ├── components/     # Layout, ConnectWallet, ProjectCard, UI, ...
+│       ├── pages/          # Home, ProjectDetail, CreateProject, MyProjects, ...
+│       ├── utils/          # algorand.js, transactions.js, api.js
+│       └── context/        # ToastContext
+└── backend/                # Node + Express API (deployed on Render)
+    └── src/
+        ├── routes/         # projects, health
+        ├── services/       # projects (DB writes), sync (on-chain reconciliation)
+        ├── middleware/     # auth (wallet-signature verification)
+        ├── jobs/           # syncJob (scheduled chain->DB sync)
+        └── utils/          # supabase, algorand, migrate
 ```
+
+**Data model.** The smart contract holds authoritative on-chain state (goal,
+raised, deadline, exchange rate, ASA). **Supabase (Postgres)** caches campaign
+metadata and lifecycle flags for fast querying; the `sync` service reconciles the
+cache against on-chain state. The frontend reads a mix of live chain state
+(`gs.*`) and cached metadata (`meta.*`).
 
 ---
 
-## Quickstart (GitHub Codespaces / Local)
+## Exchange rate (two-integer ratio)
 
-### 1. Compile the Smart Contract
+Reward campaigns price tokens with **two whole integers**, not a single rate:
 
-```bash
-cd contracts
-pip install -r requirements.txt
-python compile.py
-# Produces approval.teal and clear.teal
+- `tpb` — tokens_per_bundle (whole tokens)
+- `apb` — algo_per_bundle (whole ALGO)
+
+Read as "**tpb tokens per apb ALGO**" (e.g. `1 token per 10 ALGO`). Payout floors
+to whole tokens:
+
+```
+whole_tokens = floor( contribution_microALGO * tpb / (apb * 1,000,000) )
+tokens_due   = whole_tokens * 10^ASA_decimals
 ```
 
-### 2. Set Up the Frontend
+So a contribution below the ratio rounds down (9 ALGO at 1-per-10 -> 0 tokens;
+15 ALGO -> 1 token). `tpb == 0` signals a **contribution campaign** (no tokens). `apb`
+is always >= 1 (it's a divisor). ASA decimals are read **on-chain** at setup and
+stored as `dec_factor`; a setup-time overflow guard rejects token/rate/goal
+combinations that would exceed uint64.
 
+Rug-capable tokens are rejected at setup: an ASA with a **clawback** address,
+**freeze** address, or **default-frozen** enabled cannot be used for a campaign.
+
+---
+
+## Smart contract flow
+
+### Create (creator)
+`CreateProject` sends an `ApplicationCreate` + listing-fee payment group. Args:
+admin address, goal (microAlgos), `tpb`, days, `apb`. The listing fee
+(`goal * days / 100,000`, min 10 ALGO) is paid to the admin at creation.
+
+### Setup (creator)
+`MyProjects` -> "Set up contract" sends a 2-transaction group:
+- `[0]` AppCall `"setup"` (reads ASA decimals on-chain, enforces the overflow
+  guard and clawback/freeze rejection, inner opt-in to the ASA)
+- `[1]` ASA transfer of the token pool into the app
+  (`floor(goal * tpb / apb) * 10^decimals` base units)
+
+Contribution campaigns (`tpb == 0`) skip setup entirely.
+
+### Contribute (backer)
+Opt in to the app, then send a 2-transaction group: AppCall `"contribute"` +
+a whole-ALGO payment (contributions must be a positive whole number of ALGO).
+
+### Close out
+- **Success** (raised >= goal): backers call `"finalize"` to receive their whole-
+  token allocation; the creator claims the raised ALGO minus the 4% success fee.
+- **Failure** (deadline passed, goal not met): backers call `"refund"` to reclaim
+  their ALGO in full. If the creator has reclaimed the token pool, `asa_id`
+  resets to 0 while the campaign remains in a failed (refundable) state.
+
+---
+
+## Fees
+
+- **Listing fee**: `goal * days / 100,000` (minimum 10 ALGO), paid at creation,
+  non-refundable.
+- **Success fee**: 4%, deducted from the creator's payout only if the campaign
+  funds. No fee on failed campaigns.
+- No platform token, no cut of project tokens.
+
+---
+
+## Global state keys
+
+| Key               | Type  | Description                                   |
+|-------------------|-------|-----------------------------------------------|
+| `goal`            | uint  | Funding goal (microAlgos, whole ALGO)         |
+| `tpb`             | uint  | tokens_per_bundle (0 = donation campaign)     |
+| `apb`             | uint  | algo_per_bundle (always >= 1)                 |
+| `dec_factor`      | uint  | 10^ASA_decimals (set at setup, read on-chain) |
+| `deadline`        | uint  | Deadline round                                |
+| `days`            | uint  | Campaign duration in days                     |
+| `asa_id`          | uint  | Project token ASA (0 until setup)             |
+| `raised`          | uint  | Total raised (microAlgos)                     |
+| `funded_round`    | uint  | Round the goal was first reached (0 if never) |
+| `cancelled`       | uint  | Cancellation flag                             |
+| `creator_claimed` | uint  | Creator payout claimed flag                   |
+| `admin_claimed`   | uint  | Admin fee claimed flag                        |
+| `creator`         | bytes | Creator address                               |
+| `admin`           | bytes | Admin / fee-collection address                |
+
+### Local state (per backer)
+
+| Key       | Type | Description             |
+|-----------|------|-------------------------|
+| `contrib` | uint | Contributed microAlgos  |
+
+---
+
+## Quickstart (local / Codespaces)
+
+### 1. Compile the contract
 ```bash
-cd frontend
-cp .env.example .env
-# Edit .env and set VITE_ADMIN_ADDRESS to your Algorand wallet address
+cd contracts
+pip install -r requirements.txt   # or: pip install pyteal --break-system-packages
+python compile.py                 # writes approval.teal and clear.teal
+```
+
+### 2. Backend
+```bash
+cd backend
 npm install
+# set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ALGOD_SERVER, INDEXER_SERVER,
+# ADMIN_ADDRESS in the environment (.env locally)
+node src/utils/migrate.js         # applies the Supabase schema/migrations
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+### 3. Frontend
+```bash
+cd frontend
+npm install
+# set VITE_ALGOD_SERVER, VITE_INDEXER_SERVER, VITE_ADMIN_ADDRESS,
+# VITE_WALLETCONNECT_PROJECT_ID, and (optional) VITE_NETWORK in the environment
+npm run dev
+```
 
-### 3. Connect a Wallet
-
-Use [Pera Wallet](https://perawallet.io/) or [Defly](https://defly.app/) on **Algorand Testnet**. Get free testnet ALGO from the [Algorand Testnet Dispenser](https://bank.testnet.algorand.network/).
-
----
-
-## Contract Integration
-
-The frontend uses **stub TEAL** by default (deploys a trivial valid contract). To use the real crowdfund contract:
-
-1. Compile `contracts/crowdfund.py` to TEAL:
-   ```bash
-   python contracts/compile.py
-   ```
-2. Open `frontend/src/pages/CreateProject.jsx`
-3. Replace the `APPROVAL_TEAL_SOURCE` and `CLEAR_TEAL_SOURCE` constants with the compiled TEAL (copy the file content).
+Open `http://localhost:5173`. Connect with **Pera** or **Defly**.
 
 ---
 
-## Smart Contract Flow
+## Contract integration
 
-### Creating a Project (Developer)
+The frontend deploys the **real** contract — it imports the compiled
+`contracts/approval.teal` and `contracts/clear.teal` directly (as raw text, see
+`CreateProject.jsx`) and deploys them per campaign. There is no stub.
 
-1. **Deploy**: `CreateProject` page → sends `ApplicationCreate` transaction with goal, rate, deadline, admin address as args.
-2. **Setup**: `MyProjects` page → sends a group of 3 transactions:
-   - `[0]` AppCall `"setup"` with foreign ASA
-   - `[1]` Payment of 2% of goal (deposit)
-   - `[2]` ASA Transfer of `goal × rate / 1,000,000` tokens to the app
+To change the contract: edit `crowdfund.py` -> run `python contracts/compile.py`
+-> **rebuild and redeploy the frontend** (the TEAL is bundled at build time, so a
+recompile alone doesn't change what deploys).
 
-### Investing (Investor)
-
-1. **Opt In**: Investor calls OptIn to the app to initialize local state.
-2. **Contribute**: Sends a group of 2 transactions:
-   - `[0]` AppCall `"contribute"`
-   - `[1]` Payment of desired ALGO amount
-
-### Closing Out
-
-- **Success** (raised ≥ goal, before deadline): Call `"finalize"` with a list of investor accounts. They each receive tokens proportional to their contribution. When all contributions are processed, remaining tokens close to creator and ALGO balance closes to creator (minus 2% admin fee).
-- **Failure** (after deadline, raised < goal): Call `"refund"` with a list of investor accounts. They each receive their ALGO back. Deposit is split 50/50 between admin and creator.
+> **Mainnet note:** verify the timing constants `ROUNDS_PER_DAY` (30857) and
+> `GRACE_PERIOD_ROUNDS` (5580866) hold their mainnet values before compiling a
+> production build. Testnet values will make campaign deadlines meaningless.
 
 ---
 
-## Global State Keys
+## Environment variables
 
-| Key       | Type  | Description                    |
-|-----------|-------|-------------------------------|
-| `goal`    | uint  | Funding goal in microAlgos    |
-| `rate`    | uint  | Token units per 1 ALGO        |
-| `deadline`| uint  | Deadline round number          |
-| `asa_id`  | uint  | ASA ID (set in setup)         |
-| `raised`  | uint  | Total raised microAlgos       |
-| `deposit` | uint  | Creator deposit microAlgos    |
-| `creator` | bytes | Creator address               |
-| `admin`   | bytes | Admin address                 |
+**Frontend** (`VITE_` vars are baked in at build time — a redeploy is required
+to change them):
 
-## Local State Keys (per investor)
+| Variable                        | Description                                    |
+|---------------------------------|------------------------------------------------|
+| `VITE_ALGOD_SERVER`             | Algod API URL (mainnet in production)          |
+| `VITE_INDEXER_SERVER`           | Indexer API URL                                |
+| `VITE_ALGOD_PORT` / `_TOKEN`    | Blank for AlgoNode                             |
+| `VITE_ADMIN_ADDRESS`            | Platform admin / fee-collection address        |
+| `VITE_WALLETCONNECT_PROJECT_ID` | WalletConnect Cloud project ID                 |
+| `VITE_NETWORK`                  | `testnet` to override; defaults to mainnet     |
 
-| Key      | Type | Description              |
-|----------|------|--------------------------|
-| `contrib`| uint | Contributed microAlgos   |
+**Backend:**
 
----
-
-## Tech Stack
-
-- **Smart Contract**: [PyTeal](https://pyteal.readthedocs.io/) on Algorand AVM
-- **Frontend**: React 18 + Vite 5
-- **Wallet**: [@txnlab/use-wallet-react](https://github.com/TxnLab/use-wallet) (Pera, Defly, KMD)
-- **Algorand SDK**: [algosdk](https://github.com/algorand/js-algorand-sdk) v3
-- **Network**: Algorand Testnet (configurable via `.env`)
+| Variable                     | Description                          |
+|------------------------------|--------------------------------------|
+| `SUPABASE_URL`               | Supabase project URL                 |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Supabase service-role key            |
+| `ALGOD_SERVER`               | Algod API URL                        |
+| `INDEXER_SERVER`             | Indexer API URL                      |
+| `ADMIN_ADDRESS`              | Must match the frontend admin address|
 
 ---
 
-## Environment Variables
+## Tech stack
 
-Copy `frontend/.env.example` to `frontend/.env`:
-
-| Variable             | Description                              |
-|----------------------|------------------------------------------|
-| `VITE_ALGOD_SERVER`  | Algod API URL (default: AlgoNode testnet)|
-| `VITE_ALGOD_PORT`    | Algod port (leave blank for AlgoNode)   |
-| `VITE_ALGOD_TOKEN`   | Algod token (leave blank for AlgoNode)  |
-| `VITE_INDEXER_SERVER`| Indexer API URL                          |
-| `VITE_ADMIN_ADDRESS` | Your platform admin Algorand address     |
+- **Smart contract**: PyTeal on the Algorand AVM
+- **Frontend**: React 18 + Vite (Vercel)
+- **Backend**: Node + Express (Render)
+- **Database**: Supabase (Postgres)
+- **Wallets**: Pera, Defly via `@txnlab/use-wallet`
+- **Algorand SDK**: algosdk v3
+- **Explorer links**: Lora (AlgoKit)
 
 ---
 
 ## Notes
 
-- Project metadata (name, tagline, description, image URL, deck URL) is stored in **localStorage** for this demo. In production, use a backend API or IPFS.
-- The `finalize` and `refund` operations process accounts in batches (Algorand limits accounts per transaction). Call them multiple times to process all investors.
-- Inner transaction fees are covered by the caller — the app call fee is set proportionally to the number of accounts processed.
+- `finalize` (claim tokens on success) and `refund` (reclaim ALGO on failure)
+  are **self-service, one backer per call**: each backer calls the operation for
+  their own address (`Txn.sender()`) from the project page. There is no admin
+  batch step — backers pull their own tokens/refunds.
+- Backend auth uses a signed 0-ALGO self-transaction (a challenge in the note
+  field) to prove address ownership — works across all wallets and avoids
+  `signBytes`. Signatures are resource-bound.
+- Terminology is deliberately "backer," not "investor"; tokens are utility /
+  early-access, not equity. This framing is intentional and load-bearing.
