@@ -1,6 +1,6 @@
-# AlgoLaunch Backend
+# Sprout Backend
 
-REST API for the AlgoLaunch crowdfunding platform. Stores project metadata and
+REST API for the Sprout crowdfunding platform. Stores project metadata and
 lifecycle status in Supabase (PostgreSQL). All financial operations (contributions,
 finalization, refunds) remain on the Algorand blockchain — this backend is
 purely the metadata and status layer.
