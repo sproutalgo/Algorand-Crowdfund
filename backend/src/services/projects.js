@@ -156,7 +156,7 @@ export async function createProject({
   if (!name || String(name).trim().length === 0) throw new Error('name is required')
   if (String(name).length > 60)          throw new Error('name exceeds 60 characters')
   if (String(tagline || '').length > 120) throw new Error('tagline exceeds 120 characters')
-  if (String(description || '').length > 2000) throw new Error('description exceeds 2000 characters')
+  if (String(description || '').length > 5000) throw new Error('description exceeds 5000 characters')
   if (String(websiteUrl || '').length > 200)   throw new Error('websiteUrl exceeds 200 characters')
   const urlError = validateWebsiteUrl(websiteUrl)
   if (urlError) throw new Error(urlError)

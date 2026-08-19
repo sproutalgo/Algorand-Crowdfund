@@ -331,7 +331,10 @@ export default function CreateProject() {
                   </div>
                   <div className="field span-2">
                     <label htmlFor="cp-description">Full description</label>
-                    <textarea id="cp-description" className="textarea" placeholder="Describe your project, goals, use of funds, and team background…" value={form.description} onChange={set('description')} />
+                    <textarea id="cp-description" name="description" className="textarea" maxLength={5000} placeholder="Describe your project, goals, use of funds, and team background…" value={form.description} onChange={set('description')} />
+                    <span className="field-hint" style={{ color: form.description.length >= 5000 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                      {form.description.length}/5000 characters
+                    </span>
                   </div>
                   <div className="field span-2">
                     <div className="field-label">Why back it · highlights</div>
