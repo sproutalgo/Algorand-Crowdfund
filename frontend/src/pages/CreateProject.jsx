@@ -317,11 +317,17 @@ export default function CreateProject() {
                 <div className="form-grid">
                   <div className="field span-2">
                     <label htmlFor="cp-name">Project name *</label>
-                    <input id="cp-name" className="input" placeholder="e.g. AlgoSwap Protocol" value={form.name} onChange={set('name')} />
+                    <input id="cp-name" className="input" maxLength={60} placeholder="e.g. AlgoSwap Protocol" value={form.name} onChange={set('name')} />
+                    <span className="field-hint" style={{ color: form.name.length >= 60 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                      {form.name.length}/60 characters
+                    </span>
                   </div>
                   <div className="field span-2">
                     <label htmlFor="cp-tagline">Tagline *</label>
-                    <input id="cp-tagline" className="input" placeholder="One sentence that captures your project" value={form.tagline} onChange={set('tagline')} />
+                    <input id="cp-tagline" className="input" maxLength={120} placeholder="One sentence that captures your project" value={form.tagline} onChange={set('tagline')} />
+                    <span className="field-hint" style={{ color: form.tagline.length >= 120 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                      {form.tagline.length}/120 characters
+                    </span>
                   </div>
                   <div className="field">
                     <label htmlFor="cp-category">Category</label>
@@ -353,6 +359,7 @@ export default function CreateProject() {
                     <input
                       id="cp-website"
                       className={`input${websiteError && form.websiteUrl ? ' input-error' : ''}`}
+                      maxLength={200}
                       placeholder="https://x.com/yourproject"
                       value={form.websiteUrl}
                       onChange={set('websiteUrl')}
