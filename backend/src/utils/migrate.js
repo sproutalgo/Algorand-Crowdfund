@@ -69,6 +69,23 @@ create trigger trg_projects_updated_at
 alter table projects add column if not exists algo_per_bundle bigint not null default 1;
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Campaign metadata + series/milestone columns. The insert path in
+-- services/projects.js writes all of these; keep this list in sync so a fresh
+-- database has every column the code expects. milestone_completed_at is the one
+-- whose absence 500s the series query (silently swallowed by the frontend),
+-- hiding the entire series timeline.
+-- ─────────────────────────────────────────────────────────────────────────────
+alter table projects add column if not exists is_donation             boolean not null default false;
+alter table projects add column if not exists highlights              jsonb;
+alter table projects add column if not exists series_id               text;
+alter table projects add column if not exists series_goal_micro       int8;
+alter table projects add column if not exists milestone_number        int8;
+alter table projects add column if not exists milestone_title         text;
+alter table projects add column if not exists milestone_description   text;
+alter table projects add column if not exists planned_milestones      jsonb;
+alter table projects add column if not exists milestone_completed_at  timestamptz;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Row-level security
 -- Public can read projects that aren't hidden.
 -- Only the service role (our backend) can write.

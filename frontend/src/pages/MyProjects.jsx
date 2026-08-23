@@ -248,8 +248,18 @@ export default function MyProjects() {
     } catch (e) {
       console.error(e)
       const msg = e?.message || ''
-      if (msg.includes('underflow') || msg.includes('overspend') || msg.includes('below min')) {
-        addToast('Insufficient token balance. You need at least Goal × Rate tokens in your wallet to fund the token pool. Check your wallet balance and try again.', 'error', 8000)
+      // Distinguish the two "not enough" causes so the creator knows which
+      // resource is short:
+      //   • "below min" / "overspend" → not enough ALGO (min-balance / fees)
+      //   • "underflow" on the asset transfer → not enough of the PROJECT TOKEN
+      const isAlgoShortfall  = msg.includes('below min') || msg.includes('overspend')
+      const isTokenShortfall = msg.includes('underflow') || msg.includes('asset') || msg.includes('AssetAmount')
+      if (isAlgoShortfall && !isTokenShortfall) {
+        addToast('Not enough ALGO. Your wallet needs enough ALGO to cover the contract\u2019s minimum-balance deposit plus transaction fees. Add ALGO and try again. (Your token balance is fine — this is about ALGO.)', 'error', 9000)
+      } else if (isTokenShortfall && !isAlgoShortfall) {
+        addToast('Not enough of your project token. You need at least Goal × Rate tokens in your wallet to fund the token pool. Add tokens and try again. (Your ALGO balance is fine — this is about the token.)', 'error', 9000)
+      } else if (isAlgoShortfall || isTokenShortfall) {
+        addToast('Setup couldn\u2019t fund the token pool. This is usually one of two things: (1) not enough ALGO for the minimum-balance deposit and fees, or (2) not enough of your project token (you need Goal × Rate tokens). Check both balances and try again.', 'error', 10000)
       } else {
         addToast(msg || 'Setup failed', 'error')
       }
